@@ -1,2 +1,7 @@
 dist
+test
 __pycache__
+build
+Pipfile
+Pipfile.*
+*.spec

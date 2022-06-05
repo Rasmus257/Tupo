@@ -1,0 +1,8 @@
+{
+  "Obfuscate": true,
+  "DeadCode": true,
+  "Minify": true,
+  "EncryptBytecode": true,
+  "SignExecutable": false,
+  "LayerAmount": 5
+}
