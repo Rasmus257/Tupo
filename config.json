@@ -1,8 +1,11 @@
 {
   "Obfuscate": true,
+  "AntiDebug": true,
+  "AntiDecompile": true,
   "DeadCode": true,
+  "Marshal": true,
   "Minify": true,
   "EncryptBytecode": true,
   "SignExecutable": false,
-  "LayerAmount": 5
+  "LayerAmount": 1
 }

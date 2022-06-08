@@ -9,11 +9,14 @@ class Config(object):
     config_dir = './config.json'
     defaults = {
         "Obfuscate": True,
+        "AntiDebug": True,
+        "AntiDecompile": True,
         "DeadCode": True,
+        "Marshal": True,
         "Minify": True,
         "EncryptBytecode": True,
         "SignExecutable": False,
-        "LayerAmount": 5
+        "LayerAmount": 1
     }
 
     def __init__(self):
@@ -45,4 +48,8 @@ class Config(object):
         if not bool(data):
             print(f'config.json is empty! Applying defaults --> {cls.config_dir}')
             cls.create_config()
-        return data[setting]
+        try:
+            key = data.get(setting)
+        except KeyError:
+            key = 'no key named ' + setting
+        return key
