@@ -1,53 +1,84 @@
 import re
 import sys
 import time
-import zlib
 import lzma
+import zlib
 import random
-import marshal
 import inspect
+import marshal
 import threading
 import python_minifier
 
 from tqdm import tqdm
-from .config import Config
+from config import conf
+from .conf_parser import Config
+from .utils.AST import obfuscate
 from .utils.strings import replacements
 from .utils.layers import LayerGenerator
-from .utils.generators import VariableNameGenerator, RandomValueGenerator, RandomTypeGenerator, StrToHexGenerator
+from .utils.generators import RandomTypeGenerator, RandomValueGenerator, StrToHexGenerator, VariableNameGenerator
 
 
-class Obfuscation(object):
+class Obfuscation:
     def __init__(self, src):
         self.code = src
         self.random_name = VariableNameGenerator().generate
         self.random_val = RandomValueGenerator().generate
         self.random_type = RandomTypeGenerator().generate
         self.str_hex = StrToHexGenerator().generate
+        self.defaults = Config.defaults
+
+        self.stats = {
+            'original_size': len(self.code),
+            'compressed_size': 0,
+            'final_size': 0,
+        }
 
     def __call__(self):
-        defaults = Config.defaults
-        for key in defaults.keys():
-            val = Config.get_setting(key)
-            print(f'[+] {key}: {"Enabled" if val and type(val) is bool else val if val and type(val) is not bool else "Disabled"}')
+        del self.defaults['CompressOnly']
+        for key in self.defaults.keys():
+            val = Config.is_enabled(key)
+            print(f'[+] {key}: {"Enabled" if val else "Disabled"}')  # and type(val) is bool else val if val and type(val) is not bool
         print()
         return self.init()
 
+    def close_pbar(self) -> None:
+        '''[+] Done!'''
+        if self.pbar.n == self.pbar.total:
+            self.pbar.set_description('[+] Done!')
+            self.pbar.close()
+
     def init(self):
-        methods = [[self.Minify, True, True], [self.add_layers], [self.DeadCode], [self.Minify, True, False], [self.Marshal], [self.Protectors, True]]
-        # methods = [[self.Minify, True, True]]
-        """Specify a custom bar string formatting.
-        May impact performance.
-        [default: '{l_bar}{bar}{r_bar}'], where l_bar='{desc}: {percentage:3.0f}%|' and r_bar='| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, ' '{rate_fmt}{postfix}]'
-        Possible vars: l_bar, bar, r_bar, n, n_fmt, total, total_fmt, percentage, elapsed, elapsed_s, ncols, nrows, desc, unit, rate, rate_fmt, rate_noinv,
-        rate_noinv_fmt, rate_inv, rate_inv_fmt, postfix, unit_divisor, remaining, remaining_s, eta.
-        Note that a trailing ": " is automatically removed after {desc} if the latter is empty.
-        """
-        pbar = tqdm(
-            methods,
+        filtered_config = conf.copy()
+        del filtered_config['Executable']
+        funcs_to_check = []
+        enabled_funcs = []
+
+        for key, val in filtered_config.items():
+            if isinstance(val, dict):
+                for k in val.keys():
+                    funcs_to_check.append(k)
+            if Config.is_enabled(key):
+                funcs_to_check.append(key)
+        functions = list(filter(('Enabled').__ne__, funcs_to_check))
+        methods = inspect.getmembers(self, predicate=inspect.ismethod)
+
+        for method in methods:
+            name = method[0]
+            if name in functions:
+                conf_name = Config.get(name)
+                if isinstance(conf_name, dict):
+                    if conf_name.get('Enabled') is True:
+                        enabled_funcs.append(name)
+                else:
+                    if conf_name is True:
+                        enabled_funcs.append(name)
+
+        self.pbar = tqdm(
+            enabled_funcs,
             file=sys.stdout,
             # leave=False,
             ncols=100,
-            total=len(methods),
+            total=len(enabled_funcs),
             bar_format='''{l_bar} {bar} {n_fmt}/{total_fmt} {rate_fmt} eta {remaining}''',
             unit=' threads',
             ascii="━━",
@@ -57,37 +88,34 @@ class Obfuscation(object):
             miniters=1,
             mininterval=0.1,
         )
+        enabled_funcs.append('close_pbar')
 
-        def close_pbar():
-            '''[+] Done!'''
-            if pbar.n == pbar.total:
-                pbar.set_description('[+] Done!')
-                pbar.close()
-        methods.append([close_pbar])
+        for func in self.pbar:
+            func = getattr(self, func)
+            self.pbar.set_description(func.__doc__)
+            # func_args = [*func[1:]] if len(func) >= 2 else [None]
 
-        for func in pbar:
-            pbar.set_description(func[0].__doc__)
-            func_name = func[0].__name__
-            func_args = [*func[1:]] if len(func) >= 2 else [None]
-            confg = Config.get_setting(func_name)
-            if type(confg) is bool and confg is False:
-                continue
-            if any(arg is not None for arg in func_args):
-                process = threading.Thread(target=func[0], args=func_args, daemon=True)
-            else:
-                process = threading.Thread(target=func[0], daemon=True)
+            # we use threading to avoid blocking the main thread from errors
+            process = threading.Thread(target=func, daemon=True)
             # waiting a little bit so everything can catch up
             time.sleep(0.7)
             process.start()
             process.join()
 
+        self.stats['final_size'] = len(self.code)
+        self.log_stats()
         return self.code
 
-    def add_layers(self):
+    def AST(self):
+        """Adding AST Transformation"""
+        random.seed(self.code)
+        self.code = obfuscate(self.code)
+
+    def LayerObfuscation(self):
         '''Adding Layers'''
         random_wall = LayerGenerator(self.code).generate
 
-        for i in range(Config.get_setting('LayerAmount')):
+        for i in range(Config.get('LayersAmount')):
             self.code = random_wall()
 
     def DeadCode(self):
@@ -103,7 +131,7 @@ class Obfuscation(object):
             else:
                 self.code = self.code + f"\n{self.random_name(i)}: {self.random_type()} = {data}"
 
-    def Minify(self, compress: bool = ..., replace: bool = ...) -> ...:
+    def Minifier(self) -> None:
         """Compressing Code"""
         self.code = python_minifier.minify(
             self.code,
@@ -117,28 +145,36 @@ class Obfuscation(object):
         if formatted_code[0] == ';':
             self.code = formatted_code[1:]
         self.code = formatted_code
-        if replace is True:
+        if Config.get('ReplaceTypes') is True:
             pass
-        if compress is True:
-            og_size = len(self.code)
-            compressed = lzma.compress(zlib.compress(self.code.encode(), level=9), preset=9 | lzma.PRESET_EXTREME)
-            # print(f'\n[+] Compressed code: {og_size} --> {len(compressed)} bytes | {round(len(compressed) / len(self.code) * 100, 1)}%')
-            first_part, last_part = 'getattr(__import__("', '"), "decompress")'
-            convert = lambda x: first_part + x + last_part
-            lzma_ = self.str_hex(convert('lzma'))
-            zlib_ = self.str_hex(convert('zlib'))
-            self.code = f"""exec(eval('{zlib_}')(eval('{lzma_}')({compressed})))"""
+        compressed = lzma.compress(zlib.compress(self.code.encode(), level=9), preset=9 | lzma.PRESET_EXTREME)
+        first_part, last_part = 'getattr(__import__("', '"), "decompress")'
+        convert = lambda x: first_part + x + last_part
+        self.code = f"""exec(eval('{convert('zlib')}')(eval('{convert('lzma')}')({compressed})))"""
+        self.stats['compressed_size'] = len(self.code)
 
-    def Marshal(self):
+    def Marshal(self) -> None:
         '''Marshalling Code'''
         # fake python error that serves no purpose except to make it look like an error occured if someone tries to replace "exec" with "print"
         fake_error = 'File "<string>", line 1\n    \n    ^\nSyntaxError: invalid syntax'
-        marshal_code = marshal.dumps(compile(self.code, fake_error, 'exec'))
-        # print(f'\n[+] Marshalled code: {len(self.code)} bytes | {round(len(marshal_code) / len(self.code) * 100, 1)}%')
-        self.code = r"exec(__import__('\x6d\x61\x72\x73\x68\x61\x6c').loads({}), {})".format(marshal_code, {})
+        # eval - if the source is a single expression
+        # exec - if the source is a block of statements
+        # single - if the source is a single interactive statement
+        marsh = marshal.dumps(compile(self.code, fake_error, 'eval'))
+        self.code = "exec(__import__('\\x6d\\x61\\x72\\x73\\x68\\x61\\x6c').loads({}), {})".format(marsh, {})
 
-    def Protectors(self, anti_decompile: bool = ...) -> ...:
+    def Protectors(self) -> None:
         '''Adding Self Protectors'''
-        if anti_decompile is True:
+        if Config.get('AntiDecompile') is True:
             for_the_skids = f"\"\"\"{self.str_hex('Better luck next time skid 😂')}\"\"\"\n\n"
-            self.code = for_the_skids + "for i in range(1):" + self.code
+            self.code = for_the_skids + "for i in range(1):\n\twhile True:\n\t\texec('''" + self.code + "''')\n\t\tbreak"
+
+    def log_stats(self):
+        '''Logging Stats'''
+        original_size = self.stats['original_size']
+        compressed_size = self.stats['compressed_size']
+        final_size = self.stats['final_size']
+
+        print(f'\n[+] Original code: {original_size} bytes')
+        print(f'[+] Compressed code: {compressed_size} bytes | {round(original_size / compressed_size * 100, 1)}%')
+        print(f'[+] Final code: {final_size} bytes')
