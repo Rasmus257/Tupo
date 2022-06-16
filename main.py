@@ -1,8 +1,9 @@
 import os
-import shutil
 import sys
+import shutil
+import analyzer
+from config import conf
 from multiprocessing import Process
-
 from src import Config, Obfuscation, antivm_code
 
 __author__ = 'Rdimo'
@@ -30,29 +31,7 @@ class PyHide:
             os.remove(self.name + '.spec')
         # os.system('pipenv clean')
 
-    def configurate(self):
-        # _file = input('Enter file: ')
-        # if not os.path.exists(_file):
-        #     print(f"Coudln't find \"{_file}\"!")
-        #     sys.exit(0)
-        # if not _file.endswith('.py'):
-        #     print(f"{_file} is not a python file!")
-        #     sys.exit(0)
-        # name = input('Enter name: ')
-        # icon = input('Enter icon (optional): ')
-        # if icon and (not os.path.exists(icon) or not os.path.isfile(icon) or not icon.endswith('.ico')):
-        #     print(f"Coudln't find \"{icon}\", either it doesn't exist or it's not a valid file!")
-        #     sys.exit(0)
-        # else:
-        #     icon = None
-        file_path = 'test/test.py'
-        name = 'test'
-        icon = None
-        code = open(file_path).read()
-
-        if Config.get_setting('AntiDebug'):
-            code = antivm_code + code
-        # get the imports
+    def get_imports(self, code):
         imports = []
         code_array = []
         for i in code.splitlines():
@@ -64,11 +43,30 @@ class PyHide:
         # to remove duplicate imports
         imports = list(dict.fromkeys(imports))
         code = '\n'.join(imports) + '\n' + code
-        if Config.get_setting('Obfuscate'):
+        return code, imports
+
+    def configurate(self):
+        file_path = 'test/test.py'
+        name = 'test'
+        icon = None
+        code = open(file_path).read()
+
+        if Config.get('AntiDebug'):
+            code = antivm_code + code
+
+        code, imports = self.get_imports(code)
+
+        if conf.get('CompressOnly') is True:
+            return os.path.abspath(file_path), str(name), icon, imports
+        del conf['CompressOnly']
+
+        if Config.is_enabled('Obfuscation'):
             O = Obfuscation(code)
             code = O()
+
         with open(file='yes.py', mode='wb') as f:
             f.write(code.encode('utf-8'))
+
         return os.path.abspath(file_path), str(name), icon, imports
 
     def main(self):
@@ -80,7 +78,7 @@ class PyHide:
         for i in self.imports:
             self.install(i)
             pyinstaller += f' --hidden-import={i}'
-        if Config.get_setting('EncryptBytecode'):
+        if Config.get('EncryptBytecode'):
             self.install('tinyaes')
             pyinstaller += f' --key={os.urandom(32)}'
 

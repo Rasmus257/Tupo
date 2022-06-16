@@ -1,7 +1,12 @@
-dist
 test
 __pycache__
+.vscode
 build
+dist
+
 Pipfile
 Pipfile.*
 *.spec
+*.pyc
+*.pye
+venv/*

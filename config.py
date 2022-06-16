@@ -1,0 +1,56 @@
+#
+# True = On
+# False = Off
+#
+# Leave non-bool options blank if you don't want to use them.
+# Only applies to:
+#     - Version
+#     - Description
+#     - Copyright
+
+conf = {
+    "CompressOnly": False,  # Disable all options below except for `Executable` | mostly just for people who want to use PyHide to compress and minimize their executable
+    "Obfuscation": {
+        "Enabled": True,  # Enable/Disable Obfuscation
+        "EncryptBytecode": True,  # Encrypts the bytecode with secret key record in a .pyd so the key would be hidden in binary | recommended to keep this on since it drastically improves security
+        "HexStrings": True,  # Uses strings hexcode representation | Example: "Hello World" -> "0x48656c6c6f20576f726c64"
+        "RenameTypes": True,  # Rename variables, functions, classes, etc. | Example: "variable = "hello"" -> "곦𞤸𞹢ࢭ𰓆ﲳᩆ𣪅ﶄࢡ𧲆ﰈ𪟍ﳊ = "hello""
+        "ReplaceTypes": True,  # Replaces datatypes with more complex ones | Example: "True" -> "(()==())"
+        "Marshal": False,  # Transforms code into python byte code | Example: "print('Hello World')" -> "\x17\x17\x00Z\ne\nd\x18\x17\x00Z\x0be\x0bd\x19\x17\x00Z\x0ce\"
+        # Abstract Syntax Tree transformation | Example "print('Hello World')" -> "__=lambda _:type(*_);_0_=str;_0=lambda _0:_0.__code__.co_argcount;_=None;___=__([_0_()((2**2+(1**2+2))*((1**2+2)**2+2**2))"
+        "ASTObfuscation": True,
+        "LayerObfuscation": False,  # layer adding, will use a random layer method which all are unique making it harder to reverse | Default: False
+        "LayersAmount": 1  # amount of layers to add to the obfuscation, more layers = slower runtime but harder to deobfuscation | Default: 1
+    },
+    "Minifier": {
+        "Enabled": True,  # Enable/Disable Minifier
+        "RemoveComments": True,  # Remove Comments, docstrings, shebangs, etc... | Default: True
+        "RemoveUnused": True,  # Remove Unused Variables, imports, functions, etc... | Default: True
+    },
+    "DeadCode": {
+        "Enabled": False,  # Enable/Disable Dead Code | Default: False
+        "MinAmount": 1,  # Minimum amount of dead code | Default: 1
+        "MaxAmount": 50,  # Maximum amount of dead code | Default: 50
+    },
+    "Protectors": {
+        "Enabled": True,  # Enable/Disable Protectors
+        "AntiDecompile": True,  # Makes it much harder to disassemble the exe and get the obfuscated code | Default: True
+        "AntiDebug": True,  # Adds a anti-vm and anti-debugger to the original source | Default: True
+    },
+    "Executable": {
+        "Enabled": True,  # Enable/Disable if a executable is generated | Default: True
+        "PyinstallerOptions": [  # Pyinstaller Options, read more on https://pyinstaller.org/ | Default: ["--onefile", "--noconsole", "--clean", "--key" "%KEY%"] (recommend keeping these 3)
+            "--onefile",
+            "--noconsole",
+            "--clean",
+            "--key",
+            "%KEY%"  # will be replaced with a random generated key
+        ],
+        "SignExecutable": False,  # Signs the executable with a certificate | Default: False
+        "RequestElevation": False,  # request elevation upon execution (Windows Only) | Default: False
+        "Path": "./",  # path output where the executable will be saved | Example: "./output" | Default: "./"
+        "Version": "1.0.0",  # version of the executable | Example: "69.420.0" | Default: "1.0.0"
+        "Description": "file obfuscated with PyHide",  # description of the executable | Example: "LOL!" | Default: "file obfuscated with PyHide"
+        "Copyright": "PyHide",  # copyright of the executable | Example: "https://microsoft.com" | Default: "PyHide"
+    }
+}
