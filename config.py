@@ -35,7 +35,7 @@ conf = {
     "Protectors": {
         "Enabled": True,  # Enable/Disable Protectors
         "AntiDecompile": True,  # Makes it much harder to disassemble the exe and get the obfuscated code | Default: True
-        "AntiDebug": True,  # Adds a anti-vm and anti-debugger to the original source | Default: True
+        "AntiDebug": False,  # Adds a anti-vm and anti-debugger to the original source | Default: True
     },
     "Executable": {
         "Enabled": True,  # Enable/Disable if a executable is generated | Default: True
