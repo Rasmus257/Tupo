@@ -1,29 +1,32 @@
+import inspect
+import lzma
+import marshal
+import random
 import re
 import sys
-import time
-import lzma
-import zlib
-import random
-import inspect
-import marshal
 import threading
-import python_minifier
+import time
+import zlib
 
 from tqdm import tqdm
+
 from config import conf
+
 from .conf_parser import Config
-from .utils.AST import obfuscate
-from .utils.strings import replacements
-from .utils.layers import LayerGenerator
-from .utils.generators import RandomTypeGenerator, RandomValueGenerator, StrToHexGenerator, VariableNameGenerator
+from .utils.modules.generators import (RandomTypeGenerator,
+                                       RandomValueGenerator, StrToHexGenerator,
+                                       VariableNameGenerator)
+from .utils.modules.layers import LayerGenerator
+from .utils.obfuscate.AST import obfuscate
+from .utils.storage.strings import replacements
 
 
-class Obfuscation:
+class Handler:
     def __init__(self, src):
         self.code = src
         self.random_name = VariableNameGenerator().generate
         self.random_val = RandomValueGenerator().generate
-        self.random_type = RandomTypeGenerator().generate
+        self.random_type = RandomTypeGenerator()
         self.str_hex = StrToHexGenerator().generate
         self.defaults = Config.defaults
 
@@ -60,18 +63,17 @@ class Obfuscation:
             if Config.is_enabled(key):
                 funcs_to_check.append(key)
         functions = list(filter(('Enabled').__ne__, funcs_to_check))
-        methods = inspect.getmembers(self, predicate=inspect.ismethod)
-
-        for method in methods:
-            name = method[0]
-            if name in functions:
-                conf_name = Config.get(name)
+        # get all functions that belongs to this class
+        # inspect.getmembers(self, predicate=inspect.ismethod) would also work but the order will not be top to bottom
+        for method in Handler.__dict__.values():
+            if inspect.isfunction(method) and method.__name__ in functions:
+                conf_name = Config.get(method.__name__)
                 if isinstance(conf_name, dict):
                     if conf_name.get('Enabled') is True:
-                        enabled_funcs.append(name)
+                        enabled_funcs.append(method.__name__)
                 else:
                     if conf_name is True:
-                        enabled_funcs.append(name)
+                        enabled_funcs.append(method.__name__)
 
         self.pbar = tqdm(
             enabled_funcs,
@@ -106,21 +108,11 @@ class Obfuscation:
         self.log_stats()
         return self.code
 
-    def AST(self):
-        """Adding AST Transformation"""
-        random.seed(self.code)
-        self.code = obfuscate(self.code)
-
-    def LayerObfuscation(self):
-        '''Adding Layers'''
-        random_wall = LayerGenerator(self.code).generate
-
-        for i in range(Config.get('LayersAmount')):
-            self.code = random_wall()
-
     def DeadCode(self):
         '''Adding Dead Code'''
-        variables_amount = random.randint(100, 400)
+        min_amount = Config.get('MinAmount')
+        max_amount = Config.get('MaxAmount')
+        variables_amount = random.randint(min_amount, max_amount)
 
         for i in range(1, variables_amount):
             data = self.random_val()
@@ -131,27 +123,29 @@ class Obfuscation:
             else:
                 self.code = self.code + f"\n{self.random_name(i)}: {self.random_type()} = {data}"
 
+    def ReplaceTypes(self) -> None:
+        '''Replacing Types'''
+        pass
+
+    def RenameTypes(self) -> None:
+        '''Renaming Types'''
+        pass
+
+    def HexStrings(self):
+        """Converting Strings to Hex"""
+        pass
+
+    def EncryptBytecode(self) -> None:
+        """Hooking bytecode encryption"""
+        pass
+
     def Minifier(self) -> None:
         """Compressing Code"""
-        self.code = python_minifier.minify(
-            self.code,
-            remove_annotations=False,
-            rename_globals=True,
-            # preserve_locals=None,
-            # preserve_globals=None,
-        )
-        formatted_code = re.sub(r"(;)\1+", ";", '''exec("""{};""")'''.format(self.code.replace("\n", ";").replace('"""', '\\"\\"\\"')))
+        from .utils.minify.minifier import Minifier
+        self.code = Minifier(self.code).minify()
 
-        if formatted_code[0] == ';':
-            self.code = formatted_code[1:]
-        self.code = formatted_code
         if Config.get('ReplaceTypes') is True:
             pass
-        compressed = lzma.compress(zlib.compress(self.code.encode(), level=9), preset=9 | lzma.PRESET_EXTREME)
-        first_part, last_part = 'getattr(__import__("', '"), "decompress")'
-        convert = lambda x: first_part + x + last_part
-        self.code = f"""exec(eval('{convert('zlib')}')(eval('{convert('lzma')}')({compressed})))"""
-        self.stats['compressed_size'] = len(self.code)
 
     def Marshal(self) -> None:
         '''Marshalling Code'''
@@ -160,13 +154,30 @@ class Obfuscation:
         # eval - if the source is a single expression
         # exec - if the source is a block of statements
         # single - if the source is a single interactive statement
-        marsh = marshal.dumps(compile(self.code, fake_error, 'eval'))
+        marsh = marshal.dumps(compile(self.code, fake_error, 'exec'))
         self.code = "exec(__import__('\\x6d\\x61\\x72\\x73\\x68\\x61\\x6c').loads({}), {})".format(marsh, {})
+
+    def LayerObfuscation(self):
+        '''Adding Layers'''
+        random_wall = LayerGenerator(self.code).generate
+
+        for i in range(Config.get('LayersAmount')):
+            self.code = random_wall()
+
+    def ASTObfuscation(self):
+        """Adding AST Transformation"""
+        random.seed(self.code)
+        self.code = obfuscate(self.code)
+        compressed = lzma.compress(zlib.compress(self.code.encode(), level=9), preset=9 | lzma.PRESET_EXTREME)
+        first_part, last_part = 'getattr(__import__("', '"), "decompress")'
+        convert = lambda x: first_part + x + last_part
+        self.code = f"""exec(eval('{convert('zlib')}')(eval('{convert('lzma')}')({compressed})))"""
+        self.stats['compressed_size'] = len(self.code)
 
     def Protectors(self) -> None:
         '''Adding Self Protectors'''
         if Config.get('AntiDecompile') is True:
-            for_the_skids = f"\"\"\"{self.str_hex('Better luck next time skid 😂')}\"\"\"\n\n"
+            for_the_skids = f"\"\"\"{self.str_hex('Better luck next time skid')}\"\"\"\n\n"
             self.code = for_the_skids + "for i in range(1):\n\twhile True:\n\t\texec('''" + self.code + "''')\n\t\tbreak"
 
     def log_stats(self):
@@ -176,5 +187,8 @@ class Obfuscation:
         final_size = self.stats['final_size']
 
         print(f'\n[+] Original code: {original_size} bytes')
-        print(f'[+] Compressed code: {compressed_size} bytes | {round(original_size / compressed_size * 100, 1)}%')
+        try:
+            print(f'[+] Compressed code: {compressed_size} bytes | {round(original_size / compressed_size * 100, 1)}%')
+        except ZeroDivisionError:
+            print(f'[+] Compressed code: null bytes | 0%')
         print(f'[+] Final code: {final_size} bytes')

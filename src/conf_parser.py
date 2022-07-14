@@ -4,8 +4,10 @@ from dataclasses import dataclass
 from os import getcwd, stat
 
 import httpx
+
 from config import conf
-from .utils.methods import remove_comments_and_docstrings
+
+from .utils.minify.methods.removers import remove_comments_and_docstrings
 
 
 @dataclass

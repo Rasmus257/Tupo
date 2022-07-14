@@ -1,13 +1,16 @@
 import os
-import sys
 import shutil
-import analyzer
-from config import conf
+import sys
 from multiprocessing import Process
-from src import Config, Obfuscation, antivm_code
+
+import analyzer
+
+from config import conf
+from src import Config, Handler, antivm_code
 
 __author__ = 'Rdimo'
 __version__ = '1.0.0'
+__license__ = 'MIT'
 
 
 class PyHide:
@@ -51,7 +54,7 @@ class PyHide:
         icon = None
         code = open(file_path).read()
 
-        if Config.get('AntiDebug'):
+        if Config.is_enabled('Protectors') and Config.get('AntiDebug'):
             code = antivm_code + code
 
         code, imports = self.get_imports(code)
@@ -60,9 +63,8 @@ class PyHide:
             return os.path.abspath(file_path), str(name), icon, imports
         del conf['CompressOnly']
 
-        if Config.is_enabled('Obfuscation'):
-            O = Obfuscation(code)
-            code = O()
+        H = Handler(code)
+        code = H()
 
         with open(file='yes.py', mode='wb') as f:
             f.write(code.encode('utf-8'))
@@ -97,6 +99,11 @@ class PyHide:
 
 if __name__ == "__main__":
     supported_ver = 3
+    windows = 'nt'
+
+    if os.name != windows:
+        raise SystemExit('[!] Sorry! PyHide only works for Windows!')
+
     if sys.version_info[0] != supported_ver:
         raise ImportError('only supports Python3 --> https://www.python.org/downloads/')
     # PyHide().main()

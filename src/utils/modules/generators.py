@@ -1,7 +1,8 @@
 import random
 from time import time
 
-from .strings import ascii_letters, ascii_lowercase, ascii_uppercase
+from ..storage.strings import (ascii_letters, ascii_lowercase, ascii_uppercase,
+                               inbuilt)
 
 
 class VariableNameGenerator:
@@ -59,20 +60,8 @@ class RandomValueGenerator:
 
 
 class RandomTypeGenerator:
-    def __init__(self):
-        letter = random.choice(ascii_letters)
-        self.options = [
-            "str", "int", "float", "bool", "list", "dict", "tuple", "set", "bytes", "bytearray", 'hash',
-            "memoryview", "complex", "range", "slice", "hex", "oct", "bin", "chr", "ord", f"lambda {letter}: {letter}",
-            "locals", "globals", "vars", "dir", "eval", "exec", "compile", "repr", "format", "input", "open", "type",
-            'abs', 'help', 'min', 'setattr', 'all', 'hex', 'next', 'any', 'divmod', 'id', 'object', 'sorted', 'ascii',
-            'enumerate', 'input', 'staticmethod', 'isinstance', 'sum', 'filter', 'issubclass', 'pow', 'super', 'iter',
-            'print', 'callable', 'format', 'len', 'property', 'type', 'frozenset', 'list', 'range', 'vars', 'classmethod',
-            'getattr', 'locals', 'zip', 'globals', 'map', 'reversed', '__import__', 'hasattr', 'max', 'round', 'delattr'
-        ]
-
-    def generate(self) -> type:
-        return random.choice(self.options)
+    def __str__(self) -> str:
+        return random.choice(inbuilt)
 
 
 class StrToHexGenerator:

@@ -1,7 +1,8 @@
 import os
 import random
 from binascii import hexlify
-from .strings import ascii_letters, ascii_lowercase, ascii_uppercase
+
+from ..storage.strings import ascii_letters, ascii_lowercase, ascii_uppercase
 
 
 class Functions(object):

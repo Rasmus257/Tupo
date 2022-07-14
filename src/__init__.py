@@ -1,4 +1,8 @@
-from .obfuscation import Obfuscation
 from .conf_parser import Config
-from .utils.strings import whitespace, ascii_lowercase, ascii_uppercase, ascii_letters, digits, ascii_letters_digits, hexdigits, symbols, antivm_code
+from .handler import Handler
+from .utils.storage.strings import (antivm_code, ascii_letters,
+                                    ascii_letters_digits, ascii_lowercase,
+                                    ascii_uppercase, digits, hexdigits,
+                                    symbols, whitespace)
+
 Config()
