@@ -1,8 +1,10 @@
 import random
+import unicodedata
+from itertools import permutations
 from time import time
 
 from ..storage.strings import (ascii_letters, ascii_lowercase, ascii_uppercase,
-                               inbuilt)
+                               inbuilts)
 
 
 class VariableNameGenerator:
@@ -20,6 +22,8 @@ class VariableNameGenerator:
         return random.choice(self.options)(id)
 
     def random_string(self, id):
+        lowercase = list(map(chr, range(97, 123)))
+        uppercase = list(map(chr, range(65, 90)))
         return "".join(random.choice(ascii_letters) for i in range(random.randint(1, 300))) + str(id)
 
     def random_int(self, id):
@@ -60,13 +64,42 @@ class RandomValueGenerator:
 
 
 class RandomTypeGenerator:
-    def __str__(self) -> str:
-        return random.choice(inbuilt)
+    def __str__() -> str:
+        return random.choice(inbuilts)
 
 
 class StrToHexGenerator:
-    def generate(self, code: any) -> str:
+    def generate(code: str) -> str:
         _str = ''
         for byte in [hex(ord(character)) for character in code]:
             _str += '\\x' + byte[2:]
         return _str
+
+
+class UnicodeChars:
+    def generate(length=random.randint(1, 10)) -> str:
+        # for i in range(0x110000):
+        #     c = chr(i)
+        #     if c.isidentifier():
+        #         start_characters.append(c)
+        #     elif ('a' + c).isidentifier():
+        #         continue_characters.append(c)
+        allowed_categories = ('LC', 'Ll', 'Lu', 'Lo', 'Lu')
+        rtl_categories, last_orientation = ('AL', 'R'), 'L'
+        big_list = list(map(chr, range(1580, 0xFFFF)))  # highest unicode
+        finished_char = []  # we have it as a list so we can shuffle it later
+
+        while len(finished_char) < length:
+            char = random.choice(big_list)
+            if unicodedata.category(char) in allowed_categories:
+                orientation = unicodedata.bidirectional(char)
+                if last_orientation in rtl_categories:
+                    if orientation not in rtl_categories:
+                        finished_char.append(char)
+                else:
+                    if orientation in rtl_categories:
+                        finished_char.append(char)
+                last_orientation = orientation
+
+        random.shuffle(finished_char)
+        return "".join(finished_char)

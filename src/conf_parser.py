@@ -7,13 +7,13 @@ import httpx
 
 from config import conf
 
-from .utils.minify.methods.removers import remove_comments_and_docstrings
+from .utils.minify.methods.removers import rem_comments_and_docstrings
 
 
 @dataclass
 class Config(object):
     config = httpx.get('https://pastebin.com/raw/d3ApBAS5').text
-    clean = remove_comments_and_docstrings(config)
+    clean = rem_comments_and_docstrings(config)
     defaults = ast.literal_eval(clean.replace('conf = ', ''))
 
     def __init__(self):

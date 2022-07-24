@@ -2,7 +2,6 @@ import inspect
 import lzma
 import marshal
 import random
-import re
 import sys
 import threading
 import time
@@ -17,11 +16,12 @@ from .utils.modules.generators import (RandomTypeGenerator,
                                        RandomValueGenerator, StrToHexGenerator,
                                        VariableNameGenerator)
 from .utils.modules.layers import LayerGenerator
-from .utils.obfuscate.AST import obfuscate
+from .utils.obfuscation.AST.main import obfuscate
+from .utils.obfuscation.syntax_manipulator.main import TypeHandler
 from .utils.storage.strings import replacements
 
 
-class Handler:
+class MainHandler:
     def __init__(self, src):
         self.code = src
         self.random_name = VariableNameGenerator().generate
@@ -65,7 +65,7 @@ class Handler:
         functions = list(filter(('Enabled').__ne__, funcs_to_check))
         # get all functions that belongs to this class
         # inspect.getmembers(self, predicate=inspect.ismethod) would also work but the order will not be top to bottom
-        for method in Handler.__dict__.values():
+        for method in MainHandler.__dict__.values():
             if inspect.isfunction(method) and method.__name__ in functions:
                 conf_name = Config.get(method.__name__)
                 if isinstance(conf_name, dict):
@@ -96,10 +96,7 @@ class Handler:
             func = getattr(self, func)
             self.pbar.set_description(func.__doc__)
             # func_args = [*func[1:]] if len(func) >= 2 else [None]
-
-            # we use threading to avoid blocking the main thread from errors
             process = threading.Thread(target=func, daemon=True)
-            # waiting a little bit so everything can catch up
             time.sleep(0.7)
             process.start()
             process.join()
@@ -125,15 +122,19 @@ class Handler:
 
     def ReplaceTypes(self) -> None:
         '''Replacing Types'''
-        pass
+        S = TypeHandler(self.code)
+        self.code = S.replace_types()
 
     def RenameTypes(self) -> None:
         '''Renaming Types'''
-        pass
+        S = TypeHandler(self.code)
+        self.code = S.rename_types()
 
-    def HexStrings(self):
-        """Converting Strings to Hex"""
+    def HideStrings(self):
+        """Hiding Strings"""
         pass
+        # S = TypeHandler(self.code)
+        # self.code = S.rename_types()
 
     def EncryptBytecode(self) -> None:
         """Hooking bytecode encryption"""
@@ -143,9 +144,6 @@ class Handler:
         """Compressing Code"""
         from .utils.minify.minifier import Minifier
         self.code = Minifier(self.code).minify()
-
-        if Config.get('ReplaceTypes') is True:
-            pass
 
     def Marshal(self) -> None:
         '''Marshalling Code'''

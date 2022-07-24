@@ -2,18 +2,20 @@ import os
 import shutil
 import sys
 from multiprocessing import Process
+from tempfile import mkdtemp
 
 import analyzer
 
 from config import conf
-from src import Config, Handler, antivm_code
+from src import Config, MainHandler, antivm_code
+from src import rem_comments_and_docstrings as rem_cd
 
 __author__ = 'Rdimo'
 __version__ = '1.0.0'
 __license__ = 'MIT'
 
 
-class PyHide:
+class Tupo:
     def __init__(self):
         self.src = os.getcwd() + "/src"
         self.tools = self.src + "/tools"
@@ -52,7 +54,9 @@ class PyHide:
         file_path = 'test/test.py'
         name = 'test'
         icon = None
-        code = open(file_path).read()
+        content = open(file_path).read()
+
+        code = rem_cd(content)  # removing comments, docstrings, etc. to avoid issues further down the line
 
         if Config.is_enabled('Protectors') and Config.get('AntiDebug'):
             code = antivm_code + code
@@ -63,7 +67,7 @@ class PyHide:
             return os.path.abspath(file_path), str(name), icon, imports
         del conf['CompressOnly']
 
-        H = Handler(code)
+        H = MainHandler(code)
         code = H()
 
         with open(file='yes.py', mode='wb') as f:
@@ -102,9 +106,10 @@ if __name__ == "__main__":
     windows = 'nt'
 
     if os.name != windows:
-        raise SystemExit('[!] Sorry! PyHide only works for Windows!')
+        raise SystemExit('[!] Sorry! Tupo only works for Windows!')
 
     if sys.version_info[0] != supported_ver:
         raise ImportError('only supports Python3 --> https://www.python.org/downloads/')
-    # PyHide().main()
-    PyHide()
+    # sys.pycache_prefix = os.getenv('temp') + os.sep + '__pycache__'  # mkdtemp()  # to avoid cluttering the current directory with __pycache__ folders
+    # Tupo().main()
+    Tupo()

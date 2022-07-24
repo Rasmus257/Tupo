@@ -1,4 +1,6 @@
-import io
+import ast
+
+import astunparse
 
 from ...conf_parser import Config
 from .methods import reducers, removers, transformers
@@ -9,15 +11,12 @@ class Minifier:
         self.code = code
 
     def minify(self):
-        rem_cd = removers.remove_comments_and_docstrings
+        rem_cd = removers.rem_comments_and_docstrings
+        tree = ast.parse(rem_cd(self.code))
         transform_int = transformers.IntegerToPower
 
-        if Config.get('RemoveComments'):
-            self.code = rem_cd(self.code)
+        if Config.get('IntegerToPower'):
+            transformer = transform_int()
+            transformer.visit(tree)
 
-        # if Config.get('IntegerToPower'):
-        #     transformer = transform_int()
-        #     self.code = transformer.visit(self.code)
-
-        min_obj = io.StringIO(reducers.reducer(self.code))
-        return "".join([a for a in min_obj.readlines() if a.strip()])
+        return astunparse.unparse(tree)

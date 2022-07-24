@@ -2,7 +2,7 @@ import io
 import tokenize
 
 
-def remove_comments_and_docstrings(code) -> str:
+def rem_comments_and_docstrings(code) -> str:
     """
     removes comments, docstrings and shebangs. 
 

@@ -9,33 +9,34 @@ ascii_letters_digits = ascii_letters + digits
 hexdigits = digits + 'abcdef' + 'ABCDEF'
 symbols = r"""!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
 emojis = """😀😁😂🤣😃😄😅😆😉😊😋😎😍😘😗😙😚😜😝😛🤑🤗🤓😎🤡🤠😏😒😞😔😟😕🙁😣😖😫😩😤😠😡😶😐😑😯😦😧😮😲😵😳😱😨😰😢😥🤤😭😓😪😴🙄🤔🤥😬🤐🤢🤧😷🤒🤕😈👿👹👺💩👻💀☠️👽👾🤖🎃😺😸😹😻😼😽🙀😿😾👐🙌👏🙏🤝👍👎👊✊🤛🤜🤞✌️🤘👌👈👉👆👇☝️✋🤚🤙🖐🖖👋🤙💪🖕✍️🤳💅🖖💄💋👄👅👂👃👣👁👀🗣👤👥👶👦👧👨👩👱‍♀️👨‍♀️👨‍🦰👨‍🦱👨‍🦳👨‍🦲👩‍🦰👩‍🦱👩‍🦳👩‍🦲👵👴👲👳‍♀️👳‍♂️👮‍♀️👮‍♂️👷‍♀️👷‍♂️💂‍♀️💂‍♂️🕵️‍♀️🕵️‍♂️👩‍⚕️👨‍⚕️👩‍🌾👨‍🌾👩‍🍳👨‍🍳👩‍🎓👨‍🎓👩‍🎤👨‍🎤👩‍🏫👨‍🏫👩‍🏭👨‍🏭👩‍💻👨‍💻👩‍💼👨‍💼👩‍🔧👨‍🔧👩‍🔬👨‍🔬👩‍🎨👨‍🎨👩‍🚒👨‍🚒👩‍✈️👨‍✈️👩‍🚀👨‍🚀👩‍⚖️👨‍⚖️🤶🎅👸🤴👰🤵👼🤰🙇‍♀️🙇💁💁‍♂️🙅🙅‍♂️🙆🙆‍♂️🙋🙋‍♂️🤦‍♀️🤦‍♂️🤷‍♀️🤷‍♂️🙎🙎‍♂️🙍🙍‍♂️💇💇‍♂️💆💆‍♂️🕴💃🕺👯👯‍♂️🚶‍♀️🚶🏃‍♀️🏃👫👭👬💑👩‍❤️‍👩👨‍❤️‍👨💏👩‍❤️‍💋‍👩👨‍❤️‍💋‍👨👪👨‍👩‍👧👨‍👩‍👧‍👦👨‍👩‍👦‍👦👨‍👩‍👦‍👦👨‍👩‍👧‍👧👩‍👩‍👦👩‍👩‍👧👩‍👩‍👧‍👦👩‍👩‍👦‍👦👩‍👩‍👧‍👧👨‍👨‍👦👨‍👨‍👧👨‍👨‍👧‍👦👨‍👨‍👦‍👦👨‍👨‍👧‍👧👩‍👦👩‍👧👩‍👧‍👦👩‍👦‍👦👩‍👧‍👧👨‍👦👨‍👧👨‍👧‍👦👨‍👦‍👦👨‍👧‍👧👚👕👖👔👗👙👘👠👡👢👞👟👒🎩🎓👑⛑🎒👝👛👜💼👓🕶🌂☂️💄💋👣👄👅👂👃👁👀🗣👤👥👶👦👧👨👩👱‍♀️👨‍♀️👨‍🦰👨‍🦱👨‍🦳👨‍🦲👩‍🦰👩‍🦱👩‍🦳👩‍🦲👴👵👲👳‍♀️👳‍♂️🎓👮‍♀️👮‍♂️🕵️‍♀️🕵️‍♂️👷‍♀️👷‍♂️💂‍♀️💂‍♂️🕵️‍♀️🕵️‍♂️👩‍⚕️👨‍⚕️👩‍🌾👨‍🌾👩‍🍳👨‍🍳👩‍🎓👨‍🎓👩‍🎤👨‍🎤👩‍🏫👨‍🏫👩‍🏭👨‍🏭👩‍💻👨‍💻👩‍💼👨‍💼👩‍🔧👨‍🔧👩‍🔬👨‍🔬👩‍🎨👨‍🎨👩‍🚒👨‍🚒👩‍✈️👨‍✈️👩‍🚀👨‍🚀👩‍⚖️👨‍⚖️🤶🎅👸🤴👰🤵👼🤰🙇‍♀️🙇💁💁‍♂️🙅🙅‍♂️🙆🙆🏻🙆🏼🙆🏽🙆🏾🙆🏿🙅🏻🙅🏼🙅🏽🙅🏾🙅🏿🙋🏻🙋🏼🙋🏽🙋🏾🙋🏿💆🏻💆🏼💆🏽💆🏾💆🏿💇🏻💇🏼💇🏽💇🏾💇🏿👩🏻‍🎓👨🏻‍🎓👩🏻‍💻👨🏻‍💻👩🏻‍🎤👨🏻‍🎤👩🏻‍🎨👨🏻‍🎨👩🏻‍🚒👨🏻‍🚒👩🏻‍✈️👨🏻‍✈️👩🏻‍🚀👨🏻‍🚀👩🏻‍⚖️👨🏻‍⚖️👰🏻‍🎀👸🏻🤴🏻👰🏻🤵🏻👨🏻‍🌾👩🏻‍🌾👨🏻‍🍳👩🏻‍🍳👨🏻‍🎄👩🏻‍🎄🤶🏻🎅🏻👸🏻🤴🏻👰🏻🤵🏻👨🏻‍🎤👩🏻‍🎤👨🏻‍🔧👩🏻‍🔧👨🏻‍🍳👩🏻‍🍳👨🏻‍🔬👩🏻‍🔬👨🏻‍💼👩🎤🦠🎙🔬"""
-inbuilt = [
-    'str', 'int', 'float', 'bool', 'list', 'dict', 'tuple', 'set', 'bytes', 'bytearray', 'hash',
-    'memoryview', 'complex', 'range', 'slice', 'hex', 'oct', 'bin', 'chr', 'ord', 'lambda {0}: {0}'.format(random.choice(ascii_letters)),
-    'globals', 'vars', 'dir', 'eval', 'exec', 'compile', 'repr', 'format', 'open', 'apply', 'coerce',
-    'abs', 'help', 'min', 'setattr', 'all', 'next', 'any', 'divmod', 'id', 'object', 'sorted', 'ascii', 'cmp',
-    'enumerate', 'input', 'staticmethod', 'classmethod', 'isinstance', 'sum', 'filter', 'issubclass', 'pow',
-    'print', 'callable', 'len', 'property', 'type', 'frozenset', 'iter', 'apply', 'basestring', 'buffer', 'dreload',
-    'locals', 'zip', 'map', 'reversed', 'hasattr', 'max', 'round', 'delattr', 'getattr', 'file', 'intern', 'ip_set_hook',
-    'ipalias', 'ipmagic', 'ipsystem', 'jobs', 'long', 'reduce', 'reload', 'unichr', 'unicode', 'xrange',
-    'super', 'Ellipsis', 'None', 'True', 'False', 'copyright', 'credits', 'exit', 'license', 'quit', 'execfile',
+# inbuilts = [
+#     'str', 'int', 'float', 'bool', 'list', 'dict', 'tuple', 'set', 'bytes', 'bytearray', 'hash',
+#     'memoryview', 'complex', 'range', 'slice', 'hex', 'oct', 'bin', 'chr', 'ord', 'lambda {0}: {0}'.format(random.choice(ascii_letters)),
+#     'globals', 'vars', 'dir', 'eval', 'exec', 'compile', 'repr', 'format', 'open', 'apply', 'coerce',
+#     'abs', 'help', 'min', 'setattr', 'all', 'next', 'any', 'divmod', 'id', 'object', 'sorted', 'ascii', 'cmp',
+#     'enumerate', 'input', 'staticmethod', 'classmethod', 'isinstance', 'sum', 'filter', 'issubclass', 'pow',
+#     'print', 'callable', 'len', 'property', 'type', 'frozenset', 'iter', 'apply', 'basestring', 'buffer', 'dreload',
+#     'locals', 'zip', 'map', 'reversed', 'hasattr', 'max', 'round', 'delattr', 'getattr', 'file', 'intern', 'ip_set_hook',
+#     'ipalias', 'ipmagic', 'ipsystem', 'jobs', 'long', 'reduce', 'reload', 'unichr', 'unicode', 'xrange',
+#     'super', 'Ellipsis', 'None', 'True', 'False', 'copyright', 'credits', 'exit', 'license', 'quit', 'execfile',
 
-    'AssertionError', 'AttributeError', 'NotImplemented', 'ArithmeticError', 'BaseException', 'StopIteration', 'BufferError',
-    'BytesWarning', 'DeprecationWarning', 'EOFError', 'EnvironmentError', 'Exception', 'FloatingPointError', 'FutureWarning',
-    'GeneratorExit', 'IOError', 'ImportError', 'ImportWarning', 'IndentationError', 'IndexError', 'KeyboardInterrupt',
-    'KeyError', 'LookupError', 'MemoryError', 'NameError', 'NotImplementedError', 'OSError', 'OverflowError', 'ZeroDivisionError',
-    'PendingDeprecationWarning', 'ReferenceError', 'RuntimeError', 'RuntimeWarning', 'StandardError', 'StopIteration', 'SyntaxError',
-    'SyntaxWarning', 'SystemError', 'SystemExit', 'TabError', 'TypeError', 'UnboundLocalError', 'UnicodeDecodeError', 'UnicodeEncodeError',
-    'UnicodeError', 'UnicodeTranslateError', 'UnicodeWarning', 'UserWarning', 'ValueError', 'Warning', 'WindowsError',
+#     'AssertionError', 'AttributeError', 'NotImplemented', 'ArithmeticError', 'BaseException', 'StopIteration', 'BufferError',
+#     'BytesWarning', 'DeprecationWarning', 'EOFError', 'EnvironmentError', 'Exception', 'FloatingPointError', 'FutureWarning',
+#     'GeneratorExit', 'IOError', 'ImportError', 'ImportWarning', 'IndentationError', 'IndexError', 'KeyboardInterrupt',
+#     'KeyError', 'LookupError', 'MemoryError', 'NameError', 'NotImplementedError', 'OSError', 'OverflowError', 'ZeroDivisionError',
+#     'PendingDeprecationWarning', 'ReferenceError', 'RuntimeError', 'RuntimeWarning', 'StandardError', 'StopIteration', 'SyntaxError',
+#     'SyntaxWarning', 'SystemError', 'SystemExit', 'TabError', 'TypeError', 'UnboundLocalError', 'UnicodeDecodeError', 'UnicodeEncodeError',
+#     'UnicodeError', 'UnicodeTranslateError', 'UnicodeWarning', 'UserWarning', 'ValueError', 'Warning', 'WindowsError',
 
-    '__debug__', '__doc__', '__name__', '__package__', '__builtins__', '__file__', '__cwd__', '__loader__', '__spec__', '__import__'
-]
+#     '__debug__', '__doc__', '__name__', '__package__', '__builtins__', '__file__', '__cwd__', '__loader__', '__spec__', '__import__'
+# ]
+inbuilts = dir(__import__('builtins'))
 
 replacements = {
-    'True': '(()==())',
-    'False': '(()==[])',
-    'None': 'exec("")',
-    'pass': '...',
+    True: '(()==())',
+    False: '(()==[])',
+    None: 'exec("")',
+    # 'pass': '...',
 }
 ########################################################################################################################
 
