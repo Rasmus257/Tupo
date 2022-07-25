@@ -109,7 +109,6 @@ if __name__ == "__main__":
         raise SystemExit('[!] Sorry! Tupo only works for Windows!')
 
     if sys.version_info[0] != supported_ver:
-        raise ImportError('only supports Python3 --> https://www.python.org/downloads/')
-    # sys.pycache_prefix = os.getenv('temp') + os.sep + '__pycache__'  # mkdtemp()  # to avoid cluttering the current directory with __pycache__ folders
+        raise ImportError('[!] Sorry! Tupo Only supports Python3 --> https://www.python.org/downloads/')
     # Tupo().main()
     Tupo()

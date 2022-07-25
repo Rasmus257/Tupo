@@ -132,9 +132,8 @@ class MainHandler:
 
     def HideStrings(self):
         """Hiding Strings"""
-        pass
-        # S = TypeHandler(self.code)
-        # self.code = S.rename_types()
+        S = TypeHandler(self.code)
+        self.code = S.hide_strings()
 
     def EncryptBytecode(self) -> None:
         """Hooking bytecode encryption"""
@@ -153,7 +152,7 @@ class MainHandler:
         # exec - if the source is a block of statements
         # single - if the source is a single interactive statement
         marsh = marshal.dumps(compile(self.code, fake_error, 'exec'))
-        self.code = "exec(__import__('\\x6d\\x61\\x72\\x73\\x68\\x61\\x6c').loads({}), {})".format(marsh, {})
+        self.code = f"exec(__import__('\\x6d\\x61\\x72\\x73\\x68\\x61\\x6c').loads({marsh}), {{}})"
 
     def LayerObfuscation(self):
         '''Adding Layers'''

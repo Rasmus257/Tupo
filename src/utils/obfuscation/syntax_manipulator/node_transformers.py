@@ -1,11 +1,22 @@
 import ast
 
+from ....conf_parser import Config
 from ...storage.strings import inbuilts, replacements
 
 
+class StringHexifyer(ast.NodeTransformer):
+    def __init__(self, seed: str):
+        self.seed = seed
+
+    def visit_Constant(self, node: ast.Constant) -> any:
+        if isinstance(node.value, str) and node.value != self.seed:
+            node.value = bytes.hex(node.value.encode())
+        return self.generic_visit(node)
+
+
 class TypeReplacer(ast.NodeTransformer):
-    def __init__(self) -> None:
-        self.seen = {}
+    def __init__(self):
+        pass
 
     def visit_Constant(self, node: ast.Constant) -> any:
         for key, value in replacements.items():
@@ -20,6 +31,10 @@ class VarObfuscator(ast.NodeTransformer):
         self.seed = seed
         self.seen = {}
         self.constants = []
+
+        if Config.get('HideStrings') is True:
+            hex_to_str = """lambda x: bytes.fromhex(x).decode()"""
+            self.pos = self.add_to_constants(hex_to_str)
 
     def visit_Import(self, node: ast.Import) -> any:
         for alias in node.names:
@@ -59,9 +74,26 @@ class VarObfuscator(ast.NodeTransformer):
                 return constant
 
         if constant in self.constants:
+            if Config.get('HideStrings') is True:
+                try:
+                    real_val = ast.literal_eval(constant)
+                except ValueError:
+                    real_val = constant
+                if isinstance(real_val, str) and real_val not in inbuilts:
+                    return "{}({}[{}])".format(self.pos, self.seed, self.constants.index(constant))
             return "{}[{}]".format(self.seed, self.constants.index(constant))
         else:
             self.constants.append(constant)
+            try:
+                if Config.get('HideStrings') is True:
+                    try:
+                        real_val = ast.literal_eval(constant)
+                    except ValueError:
+                        real_val = constant
+                    if isinstance(real_val, str) and real_val not in inbuilts:
+                        return "{}({}[{}])".format(self.pos, self.seed, len(self.constants) - 1)
+            except AttributeError:
+                return "{}[{}]".format(self.seed, len(self.constants) - 1)
             return "{}[{}]".format(self.seed, len(self.constants) - 1)
 
     def get_var_name(self, i: int):

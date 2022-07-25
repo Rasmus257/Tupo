@@ -3,6 +3,7 @@ import time
 
 x = 6000000000000  # this is a variable
 lol = True
+ue = "lol"
 
 
 def main():
@@ -15,7 +16,7 @@ def main():
         print(hello + " world!")
 
     if lol:
-        print("lol")
+        print(f"{ue}")
 
 
 if __name__ == '__main__':

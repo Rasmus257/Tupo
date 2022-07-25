@@ -15,8 +15,8 @@ conf = {
         "Enabled": True,
         # Encrypts the bytecode with secret key record in a .pyd so the key would be hidden in binary | recommended to keep this on since it drastically improves security
         "EncryptBytecode": False,
-        # Hides the string from being seen in plain sight | Example: "Hello World" -> "0x48656c6c6f20576f726c64"
-        "HideStrings": False,
+        # Hides the string from being seen in plain sight | Example: "Hello World" -> "48656c6c6f20576f726c64"
+        "HideStrings": True,
         # Rename variables, functions, classes, etc. | Example: "variable = "hello"" -> "곦𞤸𞹢ࢭ𰓆ﲳᩆ𣪅ﶄࢡ𧲆ﰈ𪟍ﳊ = "hello""
         "RenameTypes": True,
         # Replaces datatypes with more complex ones | Example: "True" -> "(()==())"

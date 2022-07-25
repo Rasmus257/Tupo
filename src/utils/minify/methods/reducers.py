@@ -27,19 +27,6 @@ def clean(tkns):
 
 
 def remove_spaces(code):
-    """
-    Removes spaces between operators/operands.
-
-    Example:
-        def foo(foo, bar, blah):
-            test = "This is a %s" % foo
-
-    Will be minified to:
-        def foo(foo,bar,blah):
-            test="This is a %s"%foo
-
-    Will also remove trailing commas and joins disjointed strings like ``("foo" "bar")``.
-    """
     joining_strings = False
     prev_tok, minified, new_str = None, "", ""
     last_line, last_col = -1, 0
@@ -95,18 +82,6 @@ def remove_spaces(code):
 
 
 def join_multiline_pairs(source, pair="()"):
-    """
-    Removes lines in multiline matching pairs (e.g. parentheses).
-
-    Example:
-        yes = (
-            "Ok"
-        )
-
-    Will be minified to:
-        yes = (            "Ok"        )
-
-    """
     opener, closer = pair[0], pair[1]
     open_count, out_tokens = 0, []
 

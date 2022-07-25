@@ -78,20 +78,14 @@ class StrToHexGenerator:
 
 class UnicodeChars:
     def generate(length=random.randint(1, 10)) -> str:
-        # for i in range(0x110000):
-        #     c = chr(i)
-        #     if c.isidentifier():
-        #         start_characters.append(c)
-        #     elif ('a' + c).isidentifier():
-        #         continue_characters.append(c)
         allowed_categories = ('LC', 'Ll', 'Lu', 'Lo', 'Lu')
         rtl_categories, last_orientation = ('AL', 'R'), 'L'
-        big_list = list(map(chr, range(1580, 0xFFFF)))  # highest unicode
+        unicode_list = list(map(chr, range(1580, 0xFFFF)))  # highest unicode
         finished_char = []  # we have it as a list so we can shuffle it later
 
         while len(finished_char) < length:
-            char = random.choice(big_list)
-            if unicodedata.category(char) in allowed_categories:
+            char = random.choice(unicode_list)
+            if unicodedata.category(char) in allowed_categories and char.isidentifier():  # checking so that the new identifier is supported
                 orientation = unicodedata.bidirectional(char)
                 if last_orientation in rtl_categories:
                     if orientation not in rtl_categories:
@@ -101,5 +95,5 @@ class UnicodeChars:
                         finished_char.append(char)
                 last_orientation = orientation
 
-        random.shuffle(finished_char)
+        random.shuffle(finished_char)  # shuffling the characters to make it even more random
         return "".join(finished_char)

@@ -3,20 +3,6 @@ import tokenize
 
 
 def rem_comments_and_docstrings(code) -> str:
-    """
-    removes comments, docstrings and shebangs. 
-
-    Example:
-        def test():
-            '''
-            idk what this does
-            '''
-            pass # yes
-
-    Will be minified to:
-        def test():
-            pass
-    """
     prev_toktype = tokenize.INDENT
     last_line, last_col, out = -1, 0, ""
 
