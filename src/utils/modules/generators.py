@@ -6,6 +6,8 @@ from time import time
 from ..storage.strings import (ascii_letters, ascii_lowercase, ascii_uppercase,
                                inbuilts)
 
+# TODO FIX ALL THIS THIS AND MAKE IT CLEANER AND SHIT
+
 
 class VariableNameGenerator:
     def __init__(self):
@@ -76,8 +78,8 @@ class StrToHexGenerator:
         return _str
 
 
-class UnicodeChars:
-    def generate(length=random.randint(1, 10)) -> str:
+class Generator:
+    def nonlatin_chars(length=random.randint(1, 10)) -> str:
         allowed_categories = ('LC', 'Ll', 'Lu', 'Lo', 'Lu')
         rtl_categories, last_orientation = ('AL', 'R'), 'L'
         unicode_list = list(map(chr, range(1580, 0xFFFF)))  # highest unicode
@@ -85,7 +87,7 @@ class UnicodeChars:
 
         while len(finished_char) < length:
             char = random.choice(unicode_list)
-            if unicodedata.category(char) in allowed_categories and char.isidentifier():  # checking so that the new identifier is supported
+            if unicodedata.category(char) in allowed_categories and char.isidentifier():  # checking so that the new identifier is valid syntax
                 orientation = unicodedata.bidirectional(char)
                 if last_orientation in rtl_categories:
                     if orientation not in rtl_categories:
@@ -97,3 +99,9 @@ class UnicodeChars:
 
         random.shuffle(finished_char)  # shuffling the characters to make it even more random
         return "".join(finished_char)
+
+    def normal_chars(length=random.randint(1, 10)) -> str:
+        return "".join(random.choice(ascii_letters) for i in range(length))
+
+    def mini_chars(length=random.randint(1, 3)) -> str:
+        return "".join(random.choice(ascii_letters) for i in range(length))

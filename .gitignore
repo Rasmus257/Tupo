@@ -2,7 +2,11 @@ __pycache__
 .vscode
 build
 dist
+test-obf
 
+debug.py
+test.py
+names.txt
 Pipfile
 Pipfile.*
 *.spec

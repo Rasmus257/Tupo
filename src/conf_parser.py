@@ -12,7 +12,7 @@ from .utils.minify.methods.removers import rem_comments_and_docstrings
 
 @dataclass
 class Config(object):
-    config = httpx.get('https://pastebin.com/raw/d3ApBAS5').text
+    config = httpx.get('https://pastebin.com/raw/WZKqx17d').text
     clean = rem_comments_and_docstrings(config)
     defaults = ast.literal_eval(clean.replace('conf = ', ''))
 
@@ -29,8 +29,8 @@ class Config(object):
             self.create_config()
 
     def create_config(self):
-        with open(file=self._dir, mode='x') as f:
-            f.write(self.defaults)
+        with open(file=self._dir, mode='wb') as f:
+            f.write(self.__class__.config.encode('utf-8'))
 
     @classmethod
     def get(cls, setting):
@@ -44,4 +44,8 @@ class Config(object):
 
     @classmethod
     def is_enabled(cls, setting):
-        return conf.get(setting)['Enabled']
+        try:
+            is_enabled = conf.get(setting)['Enabled']
+        except KeyError:
+            is_enabled = False
+        return is_enabled

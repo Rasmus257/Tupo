@@ -1,28 +1,46 @@
 import ast
 
 import astunparse
+from python_minifier import (CombineImports, RemoveLiteralStatements,
+                             RemoveObject, RemovePass, remove_posargs)
+
+from src.utils.storage.errors import UnstableSyntaxError
 
 from ...conf_parser import Config
-from .methods import reducers, removers, transformers
+from .methods.removers import rem_comments_and_docstrings
+from .methods.transformers import CombineWithStatements
 
 
-class Minifier:
-    def __init__(self, code: str):
-        self.code = code
+def ast_parse(source):
+    return ast.parse(source, 'Tupo')
 
-    def minify(self):
-        rem_cd = removers.rem_comments_and_docstrings
-        tree = ast.parse(self.code)
-        transform_int = transformers.IntegerToPower
-        transform_funcs = transformers.FunctionToLambda
-        transform_combinewiths = transformers.CombineWithStatements
 
-        if Config.get('IntegerToPower'):
-            transformer = transform_int()
-            transformer.visit(tree)
+class Minifier(object):
+    @staticmethod
+    def remove_unused(code): ...
 
-        if Config.get('FunctionToLambda'):
-            transformer = transform_funcs()
-            transformer.visit(tree)
+    @staticmethod
+    def remove_pass(code):
+        module = RemovePass()(ast_parse(code))
+        return astunparse.unparse(module)
 
-        return astunparse.unparse(tree)
+    @staticmethod
+    def combine_imports(code):
+        module = CombineImports()(ast_parse(code))
+        return astunparse.unparse(module)
+
+    @staticmethod
+    def remove_literal_statements(code):
+        # NOT WORKING
+        module = RemoveLiteralStatements()(ast_parse(code))
+        return astunparse.unparse(module)
+
+    @staticmethod
+    def remove_object_base(code):
+        module = RemoveObject()(ast_parse(code))
+        return astunparse.unparse(module)
+
+    @staticmethod
+    def convert_posargs_to_args(code):
+        module = remove_posargs(ast_parse(code))
+        return astunparse.unparse(module)

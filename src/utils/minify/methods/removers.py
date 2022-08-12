@@ -1,5 +1,8 @@
+import ast
 import io
 import tokenize
+
+# class RemoveUnusedIdentifiers(ast.NodeTransformer):
 
 
 def rem_comments_and_docstrings(code) -> str:

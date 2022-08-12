@@ -1,7 +1,9 @@
+import ast
 import inspect
 import lzma
 import marshal
 import random
+import re
 import sys
 import threading
 import time
@@ -12,13 +14,13 @@ from tqdm import tqdm
 from config import conf
 
 from .conf_parser import Config
+from .utils.minify.minifier import Minifier
 from .utils.modules.generators import (RandomTypeGenerator,
                                        RandomValueGenerator, StrToHexGenerator,
                                        VariableNameGenerator)
 from .utils.modules.layers import LayerGenerator
-from .utils.obfuscation.AST.main import obfuscate
+from .utils.obfuscation.py_fuck.main import obfuscate
 from .utils.obfuscation.syntax_manipulator.main import TypeHandler
-from .utils.storage.strings import replacements
 
 
 class MainHandler:
@@ -31,8 +33,7 @@ class MainHandler:
         self.defaults = Config.defaults
 
         self.stats = {
-            'original_size': len(self.code),
-            'compressed_size': 0,
+            'original_size': sys.getsizeof(self.code),
             'final_size': 0,
         }
 
@@ -40,7 +41,7 @@ class MainHandler:
         del self.defaults['CompressOnly']
         for key in self.defaults.keys():
             val = Config.is_enabled(key)
-            print(f'[+] {key}: {"Enabled" if val else "Disabled"}')  # and type(val) is bool else val if val and type(val) is not bool
+            print(f'[+] {key}: {"Enabled" if val else "Disabled"}')
         print()
         return self.init()
 
@@ -57,52 +58,54 @@ class MainHandler:
         enabled_funcs = []
 
         for key, val in filtered_config.items():
-            if isinstance(val, dict):
-                for k in val.keys():
-                    funcs_to_check.append(k)
-            if Config.is_enabled(key):
-                funcs_to_check.append(key)
-        functions = list(filter(('Enabled').__ne__, funcs_to_check))
+            if Config.is_enabled(key) is True:
+                for func in list(filter(('Enabled').__ne__, val)):  # filter out the disabled options and rule out the whole dict if "Enabled" is False
+                    if Config.get(func) is True:
+                        funcs_to_check.append(func)
+
         # get all functions that belongs to this class
         # inspect.getmembers(self, predicate=inspect.ismethod) would also work but the order will not be top to bottom
         for method in MainHandler.__dict__.values():
-            if inspect.isfunction(method) and method.__name__ in functions:
-                conf_name = Config.get(method.__name__)
-                if isinstance(conf_name, dict):
-                    if conf_name.get('Enabled') is True:
-                        enabled_funcs.append(method.__name__)
-                else:
-                    if conf_name is True:
-                        enabled_funcs.append(method.__name__)
+            if inspect.isfunction(method) and method.__name__ in funcs_to_check:
+                enabled_funcs.append(method.__name__)
 
-        self.pbar = tqdm(
-            enabled_funcs,
-            file=sys.stdout,
-            # leave=False,
-            ncols=100,
-            total=len(enabled_funcs),
-            bar_format='''{l_bar} {bar} {n_fmt}/{total_fmt} {rate_fmt} eta {remaining}''',
-            unit=' threads',
-            ascii="━━",
-            colour='cyan',
-            unit_divisor=1,
-            smoothing=0.1,
-            miniters=1,
-            mininterval=0.1,
-        )
-        enabled_funcs.append('close_pbar')
+        self.pbar = enabled_funcs
+        progressbar_on_off = Config.get('ProgressBar')
+        if progressbar_on_off is True:
+            self.pbar = tqdm(
+                enabled_funcs,
+                file=sys.stdout,
+                # leave=False,
+                ncols=100,
+                total=len(enabled_funcs),
+                bar_format='''{l_bar} {bar} {n_fmt}/{total_fmt} {rate_fmt} eta {remaining}''',
+                unit=' threads',
+                ascii=" ━",
+                colour='cyan',
+                unit_divisor=1,
+                smoothing=0.1,
+                miniters=1,
+                mininterval=0.1,
+            )
+            enabled_funcs.append('close_pbar')
 
         for func in self.pbar:
             func = getattr(self, func)
-            self.pbar.set_description(func.__doc__)
+            if progressbar_on_off is True:
+                self.pbar.set_description(func.__doc__)
             # func_args = [*func[1:]] if len(func) >= 2 else [None]
             process = threading.Thread(target=func, daemon=True)
-            time.sleep(0.7)
+            if progressbar_on_off is True:
+                time.sleep(random.uniform(0.1, 0.7))
             process.start()
             process.join()
 
-        self.stats['final_size'] = len(self.code)
+        self.stats['final_size'] = sys.getsizeof(self.code)
         self.log_stats()
+
+        # with open('ast_tree_dump_last.txt', 'wb') as f:
+        # f.write(ast.dump(ast.parse(self.code, 'Tupo'), include_attributes=True, indent=4).encode())
+
         return self.code
 
     def DeadCode(self):
@@ -120,29 +123,55 @@ class MainHandler:
             else:
                 self.code = self.code + f"\n{self.random_name(i)}: {self.random_type()} = {data}"
 
+    ######## SOURCE OBFUSCATION AND RENAMING ########
+
+    def RenameIdentifiers(self) -> None:
+        '''Renaming Types'''
+        S = TypeHandler(self.code)
+        self.code = S.rename_types()
+
     def ReplaceTypes(self) -> None:
         '''Replacing Types'''
         S = TypeHandler(self.code)
         self.code = S.replace_types()
 
-    def RenameTypes(self) -> None:
-        '''Renaming Types'''
+    def ConstantShuffler(self):
+        """Obfuscating Types"""
         S = TypeHandler(self.code)
-        self.code = S.rename_types()
-
-    def HideStrings(self):
-        """Hiding Strings"""
-        S = TypeHandler(self.code)
-        self.code = S.hide_strings()
+        self.code = S.constant_shuffle()
 
     def EncryptBytecode(self) -> None:
         """Hooking bytecode encryption"""
-        pass
+        ...
 
-    def Minifier(self) -> None:
-        """Compressing Code"""
-        from .utils.minify.minifier import Minifier
-        self.code = Minifier(self.code).minify()
+    ######## MINIFIERS ########
+
+    def RemoveUnused(self):
+        """Removing Unused Code"""
+        ...
+        # self.code = Minifier.remove_unused(self.code)
+
+    def RemovePass(self):
+        """Removing Pass Statements"""
+        self.code = Minifier.remove_pass(self.code)
+
+    def RemoveLiteralStatements(self):
+        """Removing Literal Statements"""
+        self.code = Minifier.remove_literal_statements(self.code)
+
+    def CombineImports(self):
+        """Combining Imports"""
+        self.code = Minifier.combine_imports(self.code)
+
+    def RemoveObjectBase(self):
+        """Removing Object Base"""
+        self.code = Minifier.remove_object_base(self.code)
+
+    def ConvertPosargsToArgs(self):
+        """Converting Posargs To Args"""
+        self.code = Minifier.convert_posargs_to_args(self.code)
+
+    ######## MORE OBFUSCATION ########
 
     def Marshal(self) -> None:
         '''Marshalling Code'''
@@ -155,11 +184,13 @@ class MainHandler:
         self.code = f"exec(__import__('\\x6d\\x61\\x72\\x73\\x68\\x61\\x6c').loads({marsh}), {{}})"
 
     def LayerObfuscation(self):
-        '''Adding Layers'''
-        random_wall = LayerGenerator(self.code).generate
-
-        for i in range(Config.get('LayersAmount')):
-            self.code = random_wall()
+        ...
+        # NOT IMPLEMENTED
+        # '''Adding Layers'''
+        # random_wall = LayerGenerator(self.code).generate
+#
+        # for i in range(Config.get('LayersAmount')):
+        # self.code = random_wall()
 
     def ASTObfuscation(self):
         """Adding AST Transformation"""
@@ -169,7 +200,6 @@ class MainHandler:
         first_part, last_part = 'getattr(__import__("', '"), "decompress")'
         convert = lambda x: first_part + x + last_part
         self.code = f"""exec(eval('{convert('zlib')}')(eval('{convert('lzma')}')({compressed})))"""
-        self.stats['compressed_size'] = len(self.code)
 
     def Protectors(self) -> None:
         '''Adding Self Protectors'''
@@ -177,15 +207,13 @@ class MainHandler:
             for_the_skids = f"\"\"\"{self.str_hex('Better luck next time skid')}\"\"\"\n\n"
             self.code = for_the_skids + "for i in range(1):\n\twhile True:\n\t\texec('''" + self.code + "''')\n\t\tbreak"
 
+    ######## CONSOLE LOGGING ########
+
     def log_stats(self):
         '''Logging Stats'''
         original_size = self.stats['original_size']
-        compressed_size = self.stats['compressed_size']
         final_size = self.stats['final_size']
 
         print(f'\n[+] Original code: {original_size} bytes')
-        try:
-            print(f'[+] Compressed code: {compressed_size} bytes | {round(original_size / compressed_size * 100, 1)}%')
-        except ZeroDivisionError:
-            print(f'[+] Compressed code: null bytes | 0%')
         print(f'[+] Final code: {final_size} bytes')
+        print(f'[+] Compression ratio: {original_size - final_size} bytes ({round(100 - (final_size / original_size) * 100, 2)}%)')
