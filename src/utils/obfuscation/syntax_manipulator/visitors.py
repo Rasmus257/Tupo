@@ -1,9 +1,10 @@
 import ast
 import inspect
+import keyword
 import types
 
 from ....conf_parser import Config
-from ...storage.strings import inbuilt_types, inbuilts
+from ...storage.strings import builtin_members, inbuilt_types, inbuilts
 from .node_transformer import IntegerObfuscator, StringObfuscator
 
 
@@ -12,14 +13,33 @@ class HideConstants(ast.NodeTransformer):
         self.seed = seed
 
     def visit_Constant(self, node: ast.Constant) -> any:
+        parent = inspect.currentframe().f_back.f_back.f_locals.get('node')
+        if isinstance(parent, ast.JoinedStr):
+            # literal part of an f-string — hex-encoding it would render the raw
+            # hex in the string (no decode wrapper exists here), so leave it.
+            return node
         if node.value == self.seed:
             return self.generic_visit(node)
 
         if isinstance(node.value, str):
             if Config.get('ConstantShuffler') is True:
-                node.value = bytes.hex(node.value.encode())
-            # return self.generic_visit(node)
-            # node = StringObfuscator(node).transform()
+                hexval = bytes.hex(node.value.encode())
+                if Config.get('RenameIdentifiers') is True:
+                    # the rename stage wraps every constant access in a
+                    # bytes.fromhex(...).decode() helper, so just store the hex.
+                    node.value = hexval
+                else:
+                    # standalone: emit an inline decode so the value round-trips
+                    # instead of leaving a raw hex string in the output.
+                    return ast.Call(
+                        func=ast.Attribute(
+                            value=ast.Call(
+                                func=ast.Attribute(
+                                    value=ast.Name(id='bytes', ctx=ast.Load()),
+                                    attr='fromhex', ctx=ast.Load()),
+                                args=[ast.Constant(value=hexval)], keywords=[]),
+                            attr='decode', ctx=ast.Load()),
+                        args=[], keywords=[])
 
         elif isinstance(node, ast.Num):
             ints = {
@@ -35,7 +55,9 @@ class HideConstants(ast.NodeTransformer):
                 9: '(()==())+(()==())+(()==())+(()==())+(()==())+(()==())+(()==())+(()==())+(()==())'
             }
             if node.n in ints.keys():  # only obfuscate single digits (0-9), otherwise the file size will be as big as my ass
-                return ast.Name(id=ints[node.n], ctx=ast.Load())
+                # wrap in parens so surrounding operators keep their precedence
+                # e.g. `n - 2` must become `n - ((...)+(...))`, not `n - (...)+(...)`
+                return ast.Name(id='(' + ints[node.n] + ')', ctx=ast.Load())
             else:
                 if type(node.n) == int:
                     return ast.Call(func=ast.Name(id='int', ctx=ast.Load()), args=[IntegerObfuscator(node).transform()], keywords=[], starargs=None, kwargs=None)
@@ -70,7 +92,8 @@ class TypeReplacer(ast.NodeTransformer):
 
 class VarObfuscator(ast.NodeTransformer):
     def __init__(self, seed: str, letters: list) -> None:
-        self.letters = letters
+        # de-duplicate so the bijective numbering in get_var_name stays collision-free
+        self.letters = list(dict.fromkeys(letters)) or ['_']
         self.seed = seed
         self.seen = {}
         self.imports = []
@@ -97,13 +120,15 @@ class VarObfuscator(ast.NodeTransformer):
 
     def visit_ClassDef(self, node: ast.ClassDef) -> any:
         node.name = self.obf_var(node.name)
-        node.decorator_list = [self.visit(decorator) for decorator in node.decorator_list]
+        # let generic_visit handle the decorators once — visiting them
+        # explicitly here as well renamed them twice (decorator -> lY -> je).
         return self.generic_visit(node)
 
     def visit_Import(self, node: ast.Import) -> any:
         for alias in node.names:
             self.imports.append(alias.name)
-            self.imports.append(alias.asname) if alias.asname is not None else None
+            self.imports.append(
+                alias.asname) if alias.asname is not None else None
             if alias.asname is not None:
                 alias.asname = self.obf_var(alias.asname)
             else:
@@ -113,7 +138,8 @@ class VarObfuscator(ast.NodeTransformer):
     def visit_ImportFrom(self, node: ast.ImportFrom) -> any:
         for alias in node.names:
             self.imports.append(alias.name)
-            self.imports.append(alias.asname) if alias.asname is not None else None
+            self.imports.append(
+                alias.asname) if alias.asname is not None else None
             if alias.asname is not None:
                 alias.asname = self.obf_var(alias.asname)
             else:
@@ -122,6 +148,11 @@ class VarObfuscator(ast.NodeTransformer):
         return self.generic_visit(node)
 
     def visit_Name(self, node: ast.Name) -> any:
+        if node.id in ('super', '__class__'):
+            # zero-arg super() only works if the compiler sees `super`/`__class__`
+            # literally in the method (it creates the __class__ closure cell).
+            # Moving it into the constants list breaks inheritance, so leave it.
+            return self.generic_visit(node)
         node_parent = inspect.currentframe().f_back.f_back.f_locals
         if node.id in inbuilts:
             if isinstance(node_parent.get('node'), ast.FunctionDef) and node_parent.get('field') == 'decorator_list':
@@ -133,33 +164,42 @@ class VarObfuscator(ast.NodeTransformer):
         return self.generic_visit(node)
 
     def visit_Constant(self, node: ast.Constant) -> any:
-        if isinstance(node.value, str):
-            node.value = repr(node.value).replace('\'', '').replace('"', '')
+        parent = inspect.currentframe().f_back.f_back.f_locals.get('node')
+        if isinstance(parent, ast.JoinedStr):
+            # literal part of an f-string — leave it untouched so escape
+            # sequences (\n, \\, ...) and embedded quotes survive intact.
+            return node
 
-        node_parent = inspect.currentframe().f_back.f_back.f_locals
-        # check if the string is inside an f-string
-        if isinstance(node_parent.get('node'), ast.JoinedStr):
-            for part in node_parent.get('node').values:
-                if isinstance(part, ast.Constant):
-                    if part.value == node.value:
-                        # obfuscate the string inside the f-string and then add it to the constants and call it from there
-                        node = ast.FormattedValue(value=ast.Constant(value=str(node.value)), conversion=-1, format_spec=None)
-                        return self.generic_visit(node)
-
+        new_id = self.add_to_constants(node.value, convert=True)
+        if not isinstance(new_id, str):
+            # add_to_constants can't turn this value (e.g. None, bytes) into an
+            # identifier — leave the constant as-is rather than emitting a
+            # broken ast.Name(id=None).
+            return self.generic_visit(node)
         new_node = ast.Name()
-        new_node.id = self.add_to_constants(node.value, convert=True)
+        new_node.id = new_id
         return new_node
 
     def visit_Attribute(self, node: ast.Attribute) -> any:
+        if node.attr in builtin_members:
+            # built-in method/attribute (list.append, dict.keys, dunders, ...)
+            # — renaming it would break the call, so leave it alone.
+            return self.generic_visit(node)
+        # attribute accessed directly on an imported module (e.g. os.getenv) —
+        # the member name belongs to the module, don't rename it.
+        if isinstance(node.value, ast.Name) and node.value.id in self.imports:
+            return self.generic_visit(node)
+        # attribute that is a known member of any imported module.
         for _import in self.imports:
             try:
-                if hasattr(__import__(_import), node.attr) or node.attr in self.imports or node.value.id in self.imports:
+                if hasattr(__import__(_import), node.attr):
                     return self.generic_visit(node)
-                else:
-                    node.attr = self.obf_var(node.attr)
-                    return self.generic_visit(node)
-            except (ModuleNotFoundError, AttributeError):
-                pass
+            except Exception:
+                continue
+        # otherwise it's a user attribute — rename it consistently. obf_var maps
+        # the name the same way wherever it appears, so definitions and accesses
+        # stay in sync regardless of what the value expression is.
+        node.attr = self.obf_var(node.attr)
         return self.generic_visit(node)
 
     def visit_arg(self, node: ast.arg) -> any:
@@ -216,7 +256,9 @@ class VarObfuscator(ast.NodeTransformer):
     def add_to_constants(self, constant: any, convert: bool = False) -> str:
         if convert:
             if isinstance(constant, str):
-                constant = "\"{}\"".format(constant)
+                # repr() yields a valid Python literal that preserves quotes and
+                # escape sequences, unlike naive "{}" wrapping.
+                constant = repr(constant)
             elif isinstance(constant, int) or isinstance(constant, float):
                 constant = str(constant)
             else:
@@ -248,20 +290,30 @@ class VarObfuscator(ast.NodeTransformer):
             return "{}[{}]".format(self.seed, len(self.constants) - 1)
 
     def get_var_name(self, i: int):
-        # ?TODO? make iterable, not recursive
-        letter = self.letters[i % len(self.letters)]
-        if i >= len(self.letters):
-            return letter + self.get_var_name(i // len(self.letters))
-        return letter
+        # bijective base-N numbering over self.letters: every i -> a distinct
+        # name, no infinite recursion even when only one letter is available.
+        letters = self.letters
+        base = len(letters)
+        i += 1
+        name = ''
+        while i > 0:
+            i, rem = divmod(i - 1, base)
+            name = letters[rem] + name
+        return name
 
     def obf_var(self, oldName: str) -> str:
         if oldName in self.seen:
             return self.seen[oldName]
 
-        for key in self.seen:
-            if oldName == key:
-                return self.seen[key]
-
-        newName = self.get_var_name(len(self.seen))
+        # guarantee the new name collides with no previously assigned one
+        # (get_var_name over multi-char tokens is not always injective)
+        used = set(self.seen.values())
+        i = len(self.seen)
+        newName = self.get_var_name(i)
+        # skip collisions and Python keywords ('as', 'if', 'in', ...), which
+        # would otherwise produce invalid syntax like `def as():`.
+        while newName in used or keyword.iskeyword(newName):
+            i += 1
+            newName = self.get_var_name(i)
         self.seen[oldName] = newName
         return newName

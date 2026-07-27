@@ -7,6 +7,23 @@ class StringObfuscator:
         self.node = node
         self.str = self.node.s
 
+    # szSecret = [ 0x0046, 0x0061, 0x006E, 0x006C, 0x006D, 0x0020, 0x0055, 0x005F,
+    #              0x0070, 0x006C, 0x0066, 0x0021 ]
+
+    # for WRUGp in range(12):
+    #   BMbPZ = szSecret[WRUGp]
+    #   BMbPZ += 1
+    #   BMbPZ ^= WRUGp
+    #   BMbPZ += 1
+    #   BMbPZ ^= WRUGp
+    #   szSecret[WRUGp] = BMbPZ
+
+    # szSecret = ''.join(chr(BMbPZ & 0xFFFF) for BMbPZ in szSecret)
+
+    # del WRUGp, BMbPZ
+
+    # print(szSecret)
+
     def transform(self) -> str:
         if len(self.str) == 0:
             return self.none()

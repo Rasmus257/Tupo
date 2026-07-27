@@ -1,7 +1,2 @@
 tqdm
-httpx
-pipenv
-tinyaes
-analyzer
-astunparse
 python-minifier

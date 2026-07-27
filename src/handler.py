@@ -59,7 +59,8 @@ class MainHandler:
 
         for key, val in filtered_config.items():
             if Config.is_enabled(key) is True:
-                for func in list(filter(('Enabled').__ne__, val)):  # filter out the disabled options and rule out the whole dict if "Enabled" is False
+                # filter out the disabled options and rule out the whole dict if "Enabled" is False
+                for func in list(filter(('Enabled').__ne__, val)):
                     if Config.get(func) is True:
                         funcs_to_check.append(func)
 
@@ -121,7 +122,8 @@ class MainHandler:
             if i % 2 == 0:
                 self.code = f"{self.random_name(i)}: {self.random_type()} = {data}\n" + self.code
             else:
-                self.code = self.code + f"\n{self.random_name(i)}: {self.random_type()} = {data}"
+                self.code = self.code + \
+                    f"\n{self.random_name(i)}: {self.random_type()} = {data}"
 
     ######## SOURCE OBFUSCATION AND RENAMING ########
 
@@ -196,16 +198,19 @@ class MainHandler:
         """Adding AST Transformation"""
         random.seed(self.code)
         self.code = obfuscate(self.code)
-        compressed = lzma.compress(zlib.compress(self.code.encode(), level=9), preset=9 | lzma.PRESET_EXTREME)
+        compressed = lzma.compress(zlib.compress(
+            self.code.encode(), level=9), preset=9 | lzma.PRESET_EXTREME)
         first_part, last_part = 'getattr(__import__("', '"), "decompress")'
-        convert = lambda x: first_part + x + last_part
+        def convert(x): return first_part + x + last_part
         self.code = f"""exec(eval('{convert('zlib')}')(eval('{convert('lzma')}')({compressed})))"""
 
     def Protectors(self) -> None:
         '''Adding Self Protectors'''
         if Config.get('AntiDecompile') is True:
             for_the_skids = f"\"\"\"{self.str_hex('Better luck next time skid')}\"\"\"\n\n"
-            self.code = for_the_skids + "for i in range(1):\n\twhile True:\n\t\texec('''" + self.code + "''')\n\t\tbreak"
+            self.code = for_the_skids + \
+                "for i in range(1):\n\twhile True:\n\t\texec('''" + \
+                self.code + "''')\n\t\tbreak"
 
     ######## CONSOLE LOGGING ########
 
@@ -216,4 +221,5 @@ class MainHandler:
 
         print(f'\n[+] Original code: {original_size} bytes')
         print(f'[+] Final code: {final_size} bytes')
-        print(f'[+] Compression ratio: {original_size - final_size} bytes ({round(100 - (final_size / original_size) * 100, 2)}%)')
+        print(
+            f'[+] Compression ratio: {original_size - final_size} bytes ({round(100 - (final_size / original_size) * 100, 2)}%)')

@@ -1,15 +1,36 @@
-__pycache__
-.vscode
-build
-dist
-test-obf
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
 
-debug.py
-test.py
-names.txt
-Pipfile
-Pipfile.*
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Build / packaging
+build/
+dist/
 *.spec
-*.pyc
+
+# Pipenv (requirements.txt is the canonical dependency list)
+Pipfile
+Pipfile.lock
+
+# IDE
+.vscode/
+.idea/
+
+# Tupo runtime output & artifacts
+test-obf/
+ast_tree_dump*.txt
+test_control.txt
 *.pye
-venv/*
+
+# Bundled binary tools are not committed — drop them here locally (see README)
+src/tools/*
+!src/tools/.gitkeep
+
+# Local dev scratch
+debug.py

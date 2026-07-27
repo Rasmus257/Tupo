@@ -1,36 +1,13 @@
-import ast
-import ntpath
-from dataclasses import dataclass
-from os import getcwd, stat
-
-import httpx
-
 from config import conf
 
-from .utils.minify.methods.removers import rem_comments_and_docstrings
+# Snapshot of the option set, taken at import time (before main.py mutates
+# `conf` at runtime). Only the top-level section keys are read downstream, to
+# know which obfuscation stages exist.
+_DEFAULTS = dict(conf)
 
 
-@dataclass
-class Config(object):
-    config = httpx.get('https://pastebin.com/raw/WZKqx17d').text
-    clean = rem_comments_and_docstrings(config)
-    defaults = ast.literal_eval(clean.replace('conf = ', ''))
-
-    def __init__(self):
-        self._dir = getcwd() + '/config.py'
-        self.defaults = property(lambda self: self.__class__.defaults)
-
-        if not ntpath.exists(self._dir):
-            print(f'config.py not found! Creating one --> {self._dir}')
-            self.create_config()
-
-        if stat(self._dir).st_size == 0:
-            print(f'config.py is empty! Applying defaults --> {self._dir}')
-            self.create_config()
-
-    def create_config(self):
-        with open(file=self._dir, mode='wb') as f:
-            f.write(self.__class__.config.encode('utf-8'))
+class Config:
+    defaults = _DEFAULTS
 
     @classmethod
     def get(cls, setting):
@@ -45,7 +22,6 @@ class Config(object):
     @classmethod
     def is_enabled(cls, setting):
         try:
-            is_enabled = conf.get(setting)['Enabled']
-        except KeyError:
-            is_enabled = False
-        return is_enabled
+            return conf.get(setting)['Enabled']
+        except (KeyError, TypeError):
+            return False

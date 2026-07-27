@@ -1,8 +1,6 @@
 import ast
 import random
 
-import astunparse
-
 from src.conf_parser import Config
 
 from ...modules.generators import Generator
@@ -56,7 +54,7 @@ import random as {self.main_chr}
 {self.main_chr}.seed('{self.seed}')
 {self.seed} = [{",".join(shuffled_constants)}]
 {self.main_chr}.shuffle({self.seed})
-""" + astunparse.unparse(self.tree)
+""" + ast.unparse(self.tree)
 
         return out
 
@@ -64,10 +62,10 @@ import random as {self.main_chr}
         v = TypeReplacer()
         v.visit(self.tree)
 
-        return astunparse.unparse(self.tree)
+        return ast.unparse(ast.fix_missing_locations(self.tree))
 
     def constant_shuffle(self):
         v = HideConstants(seed=self.seed)
         v.visit(self.tree)
 
-        return astunparse.unparse(self.tree)
+        return ast.unparse(ast.fix_missing_locations(self.tree))

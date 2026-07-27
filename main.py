@@ -8,10 +8,14 @@ from src import Config, MainHandler, antivm_code
 from src import rem_comments_and_docstrings as rem_cd
 from src.utils.storage.errors import VersionError
 
+# The progress bar and obfuscated identifiers use characters outside cp1252;
+# force UTF-8 so output doesn't crash on default Windows consoles/pipes.
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
 __author__ = 'Rdimo'
 __version__ = '1.0.0'
-__license__ = 'MIT'
-
+__license__ = 'PolyForm-Noncommercial-1.0.0'
 
 class Tupo:
     def __init__(self, file_path, name, icon):
@@ -61,14 +65,12 @@ class Tupo:
         if conf.get('CompressOnly') is True:
             return os.path.abspath(file_path), str(name), icon, imports
         del conf['CompressOnly']
-        import ast
-        with open('ast_tree_dump.txt', 'wb') as f:
-            f.write(ast.dump(ast.parse(code, 'Tupo'), include_attributes=True, indent=4).encode())
         H = MainHandler(code)
         code = H()
 
         if name.endswith('.py'):
             name = name[:-3]
+        os.makedirs('test-obf', exist_ok=True)
         with open(file=f'test-obf/{name}.py', mode='wb') as f:
             f.write(code.encode('utf-8'))
 
@@ -102,21 +104,17 @@ class Tupo:
 
 if __name__ == "__main__":
     args = sys.argv
-    supported_ver = (3, 8)
-    windows = 'nt'
+    supported_ver = (3, 9)
 
-    if os.name != windows:
-        raise SystemExit('[!] Sorry! Tupo only works for Windows!')
-
-    if sys.version_info[:2] < (3, 8):
-        raise VersionError('[!] Sorry! Tupo Only supports Python3.8+ --> https://www.python.org/downloads/')
+    if sys.version_info[:2] < supported_ver:
+        raise VersionError('[!] Sorry! Tupo only supports Python 3.9+ --> https://www.python.org/downloads/')
 
     # Tupo().main()
 
     try:
         file_path = args[1]
     except IndexError:
-        file_path = r'.\test-obf\test_general.py'
+        file_path = r'.\test\test_general.py'
     name = os.path.basename(file_path)
     icon = None
     Tupo(file_path=file_path, name=name, icon=icon)
